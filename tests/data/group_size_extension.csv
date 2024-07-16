@@ -1,0 +1,9 @@
+id,coordinates,side_type_seq,center_type,quest_type
+0,"(0, 0)",GGGGGG,G,
+1,"(0, 4)",WWWGWW,W,
+2,"(3, 2)",HHHHGW,H,
+3,"(-3, 2)",GWGTGG,G,
+4,"(0, 8)",WWWWWW,W,
+5,"(3, 6)",WWWHWW,W,
+6,"(-3, 6)",WWWGRG,G,
+7,"(-3, -2)",TGGTGG,T,

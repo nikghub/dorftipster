@@ -1,0 +1,5 @@
+[MASTER]
+extension-pkg-whitelist=PySide6
+
+[MESSAGES CONTROL]
+disable = broad-except, missing-function-docstring, missing-class-docstring, missing-module-docstring

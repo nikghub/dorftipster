@@ -1,0 +1,10 @@
+[run]
+omit =
+    */tests/*
+    */shibokensupport/*
+    */signature_bootstrap.py
+    */src/constants.py
+
+[report]
+exclude_lines =
+    @Slot

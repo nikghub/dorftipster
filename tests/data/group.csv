@@ -1,0 +1,12 @@
+id,coordinates,side_type_seq,center_type,quest_type
+0,"(0, 0)",WGWGWG,W,
+1,"(0, 4)",WGGWGG,W,
+2,"(0, 8)",GWWWGG,G,
+3,"(3, 10)",GWGGWG,G,
+4,"(-3, -2)",GGGGWW,G,
+5,"(0, -4)",GWGWGG,W,
+6,"(0, -8)",WGWGGG,W,
+7,"(3, -2)",GGWWWW,G,
+8,"(3, -10)",GWWWGW,W,
+9,"(6, -8)",WGGWWG,W,
+10,"(6, -4)",GWGWGW,W,

@@ -1,0 +1,17 @@
+id,coordinates,side_type_seq,center_type,quest_type
+0,"(0, 0)",WGWGWG,W,W
+1,"(0, 4)",WGGWGG,W,
+2,"(0, 8)",GWWWGG,G,
+3,"(3, 10)",GGGGWG,G,
+4,"(0, -4)",GWGWGG,W,
+5,"(0, -8)",WGWGGG,W,
+6,"(3, -2)",GGWWWW,G,
+7,"(3, -10)",GWWWGW,W,
+8,"(6, -8)",WGGWWG,W,
+9,"(6, -4)",GWGWGW,W,
+10,"(3, -14)",WGWGGG,W,
+11,"(6, -16)",GWGGGW,W,
+12,"(9, -14)",GWGGWG,W,
+13,"(12, -12)",WGGGWG,W,
+14,"(12, -8)",WGGWGG,W,
+15,"(12, -4)",GGGWGW,W,
