@@ -207,8 +207,12 @@ class TileMapView(QGraphicsView):
             self.centerOn(
                 to_scene_coordinates(self.selected_candidate.tile.coordinates)
             )
+            self.coordinates_selected.emit(
+                self.selected_candidate.tile.coordinates
+            )
         elif self.selected_open_coords is not None:
             self.centerOn(to_scene_coordinates(self.selected_open_coords))
+            self.coordinates_selected.emit(self.selected_open_coords)
 
     def remove_items_at_coordinates(self, coordinates):
         scene_coords = to_scene_coordinates(coordinates)
