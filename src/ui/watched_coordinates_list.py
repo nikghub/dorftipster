@@ -6,12 +6,14 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QLabel,
+    QCheckBox,
 )
 from PySide6.QtCore import Qt, Slot, Signal
 
 from src.constants import UIConstants
 
 from src.ui.candidate_table_widget import CandidateTableWidget, NumericTableWidgetItem
+from src.side import Side
 
 
 class WatchedCoordinatesList(CandidateTableWidget):
@@ -29,6 +31,7 @@ class WatchedCoordinatesList(CandidateTableWidget):
 
         self.watch_candidate = None
         self.watched_open_coords_dict = {}
+        self.selected_coordinates = None
 
         self.table_widget.itemSelectionChanged.connect(self.handle_selection_changed)
         self.table_widget.cellClicked.connect(self.handle_selection_changed)
@@ -51,6 +54,12 @@ class WatchedCoordinatesList(CandidateTableWidget):
         self.set_columns(columns)
 
         layout.addWidget(self.table_widget)
+
+        perfect_cb = QCheckBox("Show only perfect matches")
+        perfect_cb.setChecked(False)
+        self.perfect_matches_only = False
+        perfect_cb.stateChanged.connect(self.handle_toggle_perfect_matches_only)
+        layout.addWidget(perfect_cb)
 
         button_layout = QHBoxLayout()
         self.watch_button = QPushButton("Watch")
@@ -138,6 +147,13 @@ class WatchedCoordinatesList(CandidateTableWidget):
         if coords is not None:
             self.trigger_unwatch_coordinates.emit(coords)
 
+    @Slot()
+    def handle_toggle_perfect_matches_only(self, state):
+        self.perfect_matches_only = state == Qt.Checked.value
+        self.update_table()
+        if self.selected_coordinates is not None:
+            self.update_coords_selection(self.selected_coordinates)
+
     @Slot(tuple)
     def update_watch_candidate(self, watch_candidate):
         self.watch_candidate = watch_candidate
@@ -148,6 +164,7 @@ class WatchedCoordinatesList(CandidateTableWidget):
             self.update_coords_selection(self.watch_candidate[0])
 
     def update_coords_selection(self, coords):
+        self.selected_coordinates = coords
         if coords not in self.open_coords_list:
             self.trigger_clear_selection.emit()
             return
@@ -193,6 +210,8 @@ class WatchedCoordinatesList(CandidateTableWidget):
                     self.watch_candidate is not None
                     and candidate.tile.coordinates == self.watch_candidate[0]
                 ):
+                    # add watch candidate independent of perfect placement
+                    # as we want to allow adding a watch for it and see the "Seen" count
                     if (coords := self.watch_candidate[0]) not in row_entries:
                         add_entry(
                             coords,
@@ -206,6 +225,12 @@ class WatchedCoordinatesList(CandidateTableWidget):
                         candidate.tile.coordinates == coords
                         and coords not in row_entries
                     ):
+                        # check for perfect placement if the option is enabled
+                        perfect_placement = candidate.tile.get_num_sides(Side.Placement.IMPERFECT_MATCH) == 0
+                        if self.perfect_matches_only and not perfect_placement:
+                            # always show the selected coordinates, even if not perfect
+                            if candidate.tile.coordinates != self.selected_coordinates:
+                                continue
                         add_entry(
                             coords,
                             get_index(idx),
