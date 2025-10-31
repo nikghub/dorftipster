@@ -42,7 +42,7 @@ On Windows and macOS, OpenGL should be available by default.
 **Please note:** The project requires Python 3.8 or higher
 
 ### Windows
-1. Download Python from [python.org](https://www.python.org/downloads/).
+1. Download Python 3.13 from [python.org](https://www.python.org/downloads/) (please note that Python >= 3.14 is not yet supported)
 2. Run the installer and check "Add Python to PATH" option.
 3. Complete the installation.
 
@@ -56,11 +56,25 @@ On Windows and macOS, OpenGL should be available by default.
 1. Update package list:
     `sudo apt update`
 2. Install Python and pip:
-    `sudo apt install python3 python3-pip`
+    `sudo apt install python3-full python3-pip`
 
 ## Installing Dependencies
+
 Open a terminal and navigate to the project directory:
-    `cd path/to/dorfromantik`
+    `cd path/to/dorftipster`
+
+Create a virtual environment within python (in the project directory) and activate it:
+
+```
+python -m venv .venv
+source .venv/bin/activate
+```
+
+Ensure latest version of pip:
+
+```
+python -m pip install --upgrade pip
+```
 
 Install the required packages:
     `pip install -r requirements.txt`
