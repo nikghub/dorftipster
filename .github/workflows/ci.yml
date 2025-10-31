@@ -4,9 +4,9 @@ on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
-      image: python:latest
+      image: python:3.13-slim
 
     env:
       PIP_CACHE_DIR: ${{ github.workspace }}/.cache/pip
