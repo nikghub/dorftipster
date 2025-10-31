@@ -6,7 +6,7 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     container:
-      image: python:3.13-slim
+      image: python:3.13
 
     env:
       PIP_CACHE_DIR: ${{ github.workspace }}/.cache/pip
