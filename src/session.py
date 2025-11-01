@@ -368,7 +368,7 @@ class Session(QObject):
         del self.open_coords[tile.coordinates]
         for s in TileSubsection.get_side_values():
             if (
-                neighbor_coords := tile.neighbor_coordinates[s]
+                neighbor_coords := tile.neighbor_coordinates[s.value]
             ) not in self.played_tiles:
                 self.open_coords[neighbor_coords] = None
 
@@ -380,7 +380,7 @@ class Session(QObject):
         del open_coords_copy[tile.coordinates]
         for s in TileSubsection.get_side_values():
             if (
-                neighbor_coords := tile.neighbor_coordinates[s]
+                neighbor_coords := tile.neighbor_coordinates[s.value]
             ) not in self.played_tiles:
                 open_coords_copy[neighbor_coords] = None
 
@@ -747,7 +747,7 @@ class Session(QObject):
     def _update_tile_side_placements(self, tile):
         for subsection, side in tile.get_sides().items():
             opposing_side = self._get_tile_side(
-                tile.neighbor_coordinates[subsection], Tile.get_opposing(subsection)
+                tile.neighbor_coordinates[subsection.value], Tile.get_opposing(subsection)
             )
             if opposing_side is not None:
                 side.placement = TileEvaluation.compute_side_placement_match(
@@ -757,7 +757,7 @@ class Session(QObject):
     def _update_tile_neighbor_placements(self, tile, undo_tile_placement=False):
         for subsection, side in tile.get_sides().items():
             opposing_side = self._get_tile_side(
-                tile.neighbor_coordinates[subsection], Tile.get_opposing(subsection)
+                tile.neighbor_coordinates[subsection.value], Tile.get_opposing(subsection)
             )
             if opposing_side is not None:
                 if undo_tile_placement:  # tile will be removed due to undo

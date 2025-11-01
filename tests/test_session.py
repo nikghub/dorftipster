@@ -418,7 +418,7 @@ def test_compute_candidate_tiles():
 
                 contains_imperfect_sides = False
                 for subsection, side in candidate.subsections.items():
-                    if candidate.neighbor_coordinates[subsection] == center_coordinate:
+                    if candidate.neighbor_coordinates[subsection.value] == center_coordinate:
                         # side connects to center
 
                         if type in TileEvaluation.RESTRICTED_DICT and \
@@ -600,8 +600,8 @@ def test_compute_open_tiles_for_tile():
     assert candidate.coordinates not in open_tiles_for_candidate
 
     for subsection in TileSubsection.get_side_values():
-        if candidate.neighbor_coordinates[subsection] not in session.played_tiles:
-            assert candidate.neighbor_coordinates[subsection] in open_tiles_for_candidate
+        if candidate.neighbor_coordinates[subsection.value] not in session.played_tiles:
+            assert candidate.neighbor_coordinates[subsection.value] in open_tiles_for_candidate
 
 
 def test_watch_unwatch_coordinates_tiles_seen():
@@ -613,7 +613,7 @@ def test_watch_unwatch_coordinates_tiles_seen():
 
     def get_tile_placement(played_tiles, tile):
         for subsection, side in tile.get_sides().items():
-            neighbor_coordinates = tile.neighbor_coordinates[subsection]
+            neighbor_coordinates = tile.neighbor_coordinates[subsection.value]
             if neighbor_coordinates in played_tiles:
                 opposing_side = played_tiles[neighbor_coordinates].get_sides()[Tile.get_opposing(subsection)]
                 side.placement = TileEvaluation.compute_side_placement_match(side.type, opposing_side.type)

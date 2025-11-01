@@ -271,7 +271,7 @@ class Group:
             if opposing_subsection is None:
                 continue
 
-            opposing_tile_coords = tile.neighbor_coordinates[subsection]
+            opposing_tile_coords = tile.neighbor_coordinates[subsection.value]
 
             # collect possible extension points for the group
             if opposing_tile_coords not in played_tiles:

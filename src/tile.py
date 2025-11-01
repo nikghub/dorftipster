@@ -9,12 +9,12 @@ from src.side_type import SideType
 
 class Tile:
     _opposite_dict = {
-        TileSubsection.TOP: TileSubsection.BOTTOM,
-        TileSubsection.UPPER_RIGHT: TileSubsection.LOWER_LEFT,
-        TileSubsection.LOWER_RIGHT: TileSubsection.UPPER_LEFT,
-        TileSubsection.BOTTOM: TileSubsection.TOP,
-        TileSubsection.LOWER_LEFT: TileSubsection.UPPER_RIGHT,
-        TileSubsection.UPPER_LEFT: TileSubsection.LOWER_RIGHT,
+        'TOP': TileSubsection.BOTTOM,
+        'UR': TileSubsection.LOWER_LEFT,
+        'LR': TileSubsection.UPPER_LEFT,
+        'BOT': TileSubsection.TOP,
+        'LL': TileSubsection.UPPER_RIGHT,
+        'UL': TileSubsection.LOWER_RIGHT,
     }
 
     class Placement(Enum):
@@ -42,13 +42,13 @@ class Tile:
         self.neighbor_coordinates = {}
         if self.coordinates is not None:
             self.neighbor_coordinates = {
-                TileSubsection.TOP: (coordinates[0], coordinates[1] + 4),
-                TileSubsection.UPPER_RIGHT: (coordinates[0] + 3, coordinates[1] + 2),
-                TileSubsection.LOWER_RIGHT: (coordinates[0] + 3, coordinates[1] - 2),
-                TileSubsection.BOTTOM: (coordinates[0], coordinates[1] - 4),
-                TileSubsection.LOWER_LEFT: (coordinates[0] - 3, coordinates[1] - 2),
-                TileSubsection.UPPER_LEFT: (coordinates[0] - 3, coordinates[1] + 2),
-                TileSubsection.CENTER: (coordinates[0], coordinates[1]),
+                'TOP': (coordinates[0], coordinates[1] + 4),
+                'UR': (coordinates[0] + 3, coordinates[1] + 2),
+                'LR': (coordinates[0] + 3, coordinates[1] - 2),
+                'BOT': (coordinates[0], coordinates[1] - 4),
+                'LL': (coordinates[0] - 3, coordinates[1] - 2),
+                'UL': (coordinates[0] - 3, coordinates[1] + 2),
+                'CENTER': (coordinates[0], coordinates[1]),
             }
 
     def __eq__(self, other):
@@ -210,7 +210,7 @@ class Tile:
     def get_num_perfectly_closed(self, played_tiles):
         num_perfectly_closed = 0
         for subsection, side in self.get_sides().items():
-            neighbor_coords = self.neighbor_coordinates[subsection]
+            neighbor_coords = self.neighbor_coordinates[subsection.value]
             if neighbor_coords not in played_tiles:
                 continue
             neigbor_tile = played_tiles[neighbor_coords]
@@ -253,8 +253,8 @@ class Tile:
     @classmethod
     @lru_cache(maxsize=None)
     def get_opposing(cls, subsection):
-        if subsection in cls._opposite_dict:
-            return cls._opposite_dict[subsection]
+        if subsection.value in cls._opposite_dict:
+            return cls._opposite_dict[subsection.value]
         return None
 
     @classmethod
@@ -294,7 +294,7 @@ class Tile:
         if neighbor_tile is not None:
             for subsection in TileSubsection.get_side_values():
                 # update with the placement of the candidate tile
-                if self.neighbor_coordinates[subsection] == neighbor_tile.coordinates:
+                if self.neighbor_coordinates[subsection.value] == neighbor_tile.coordinates:
                     subsection_placements[subsection] = neighbor_tile.subsections[
                         Tile.get_opposing(subsection)
                     ].placement

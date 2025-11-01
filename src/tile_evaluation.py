@@ -213,7 +213,7 @@ class TileEvaluation:
                 if subsection == TileSubsection.CENTER:
                     continue
 
-                neighbor_coordinates = tile.neighbor_coordinates[subsection]
+                neighbor_coordinates = tile.neighbor_coordinates[subsection.value]
                 # look at extensions for the group that are open from the candidate tile
                 if neighbor_coordinates not in open_coords:
                     continue
@@ -230,7 +230,7 @@ class TileEvaluation:
                 local_open_tiles = dict(open_coords)
                 for s in TileSubsection.get_side_values():
                     if (
-                        tile.neighbor_coordinates[s] in local_open_tiles
+                        tile.neighbor_coordinates[s.value] in local_open_tiles
                         and tile.subsections[s].type in self.RESTRICTED_DICT
                         and (
                             tile.subsections[s].type
@@ -238,7 +238,7 @@ class TileEvaluation:
                             or s != subsection
                         )
                     ):
-                        del local_open_tiles[tile.neighbor_coordinates[s]]
+                        del local_open_tiles[tile.neighbor_coordinates[s.value]]
 
                 for distant_group_id, paths in self.get_distant_groups(
                     local_open_tiles,
@@ -507,7 +507,7 @@ class TileEvaluation:
                 ):
                     continue
 
-                neighbor_coordinates = rating.tile.neighbor_coordinates[subsection]
+                neighbor_coordinates = rating.tile.neighbor_coordinates[subsection.value]
                 # look at extensions for the group that are open from the candidate tile
                 if any(
                     neighbor_coordinates in container
@@ -634,7 +634,7 @@ class TileEvaluation:
     def _compute_tile_placement_rating(self, rating):
         rating.tile_placement_rating = 0
         for subsection, side in rating.tile.get_sides().items():
-            neighbor_coords = rating.tile.neighbor_coordinates[subsection]
+            neighbor_coords = rating.tile.neighbor_coordinates[subsection.value]
             tile_placement = Tile.Placement.UNKNOWN
             if neighbor_coords in self.played_tiles:
                 neigbor_tile = self.played_tiles[neighbor_coords]
@@ -903,7 +903,7 @@ class TileEvaluation:
                 TileSubsection, Dict[TileSubsection, SideType]
             ] = {}
             for subsection in TileSubsection.get_side_values():
-                neighbor_coordinate = self.tile.neighbor_coordinates[subsection]
+                neighbor_coordinate = self.tile.neighbor_coordinates[subsection.value]
                 if neighbor_coordinate in played_tiles:
                     # neighbor tile is not open
                     continue
