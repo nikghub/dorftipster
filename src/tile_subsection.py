@@ -1,4 +1,5 @@
 from enum import Enum
+from functools import lru_cache
 
 class TileSubsection(Enum):
     TOP = 'TOP'
@@ -14,17 +15,33 @@ class TileSubsection(Enum):
         return self.value < other.value
 
     @classmethod
+    @lru_cache(maxsize=None)
+    def _all_values(cls):
+        return tuple(cls.__members__.values())
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def _side_values(cls):
+        return tuple(cls._all_values()[:-1])
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def _name_to_index(cls):
+        return {name: i for i, name in enumerate(cls.__members__)}
+
+    @classmethod
     def get_all_values(cls):
-        return list(cls.__members__.values())
+        return cls._all_values()
 
     @classmethod
     def get_side_values(cls):
-        return cls.get_all_values()[:-1]
+        return cls._side_values()
 
     @classmethod
     def get_index(cls, subsection):
-        return list(cls.__members__).index(subsection.name)
+        return cls._name_to_index()[subsection.name]
 
     @classmethod
     def at_index(cls, index):
-        return cls.get_side_values()[index % len(cls.get_side_values())]
+        side_vals = cls._side_values()
+        return side_vals[index % len(side_vals)]

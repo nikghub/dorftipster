@@ -180,7 +180,7 @@ class Group:
             remaining_subsections =\
                 [s for s in TileSubsection.get_side_values() if s not in center_group]
         else:
-            remaining_subsections = TileSubsection.get_side_values()
+            remaining_subsections = list(TileSubsection.get_side_values())
 
         while len(remaining_subsections) > 0:
             start_subsection = remaining_subsections[0]

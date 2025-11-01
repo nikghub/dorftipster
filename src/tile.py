@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Dict, List, Tuple
+from functools import lru_cache
 
 from src.tile_subsection import TileSubsection
 from src.side import Side
@@ -226,6 +227,7 @@ class Tile:
         return num_perfectly_closed
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_coordinates(cls, base_coordinates, subsection):
         x, y = base_coordinates
         if subsection == TileSubsection.TOP:
@@ -244,16 +246,19 @@ class Tile:
         return (x, y)
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_opposite_dict(cls):
         return cls._opposite_dict
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_opposing(cls, subsection):
         if subsection in cls._opposite_dict:
             return cls._opposite_dict[subsection]
         return None
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_direct_neighbors(cls, subsection):
         if subsection == TileSubsection.CENTER:
             return []
