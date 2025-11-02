@@ -6,7 +6,7 @@ from PySide6.QtGui import Qt, QBrush, QPen, QPolygonF, QFont, QFontMetrics
 
 from src.tile_subsection import TileSubsection
 from src.side_type import SideType
-from src.constants import UIConstants
+from src.ui.constants import UIConstants
 
 from src.ui.utils import to_scene_coordinates
 

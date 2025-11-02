@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QFont, QPen
 
 from src.tile import Tile
-from src.constants import UIConstants
+from src.ui.constants import UIConstants
 
 
 class Legend(QWidget):

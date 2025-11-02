@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QApplication
 from PySide6.QtCore import Qt, Slot, Signal, QPointF, QEvent
 from PySide6.QtGui import QPainter, QKeySequence, QBrush, QMouseEvent, QKeyEvent
 
-from src.constants import UIConstants
+from src.ui.constants import UIConstants
 from src.tile_subsection import TileSubsection
 from src.tile import Tile
 
