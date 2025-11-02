@@ -1,4 +1,5 @@
 from enum import Enum
+from functools import lru_cache
 
 class SideType(Enum):
     # types that may be placed against any
@@ -18,18 +19,22 @@ class SideType(Enum):
         return self.value < other.value
 
     @classmethod
+    @lru_cache(maxsize=None)
     def all_types(cls):
-        return list(cls)
+        return tuple(cls)
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_values(cls):
-        return list(cls.__members__.values())[:-1]
+        return tuple(cls.__members__.values())[:-1]
 
     @classmethod
+    @lru_cache(maxsize=None)
     def is_equivalent_to_green(cls, side_type):
         return side_type in [SideType.STATION, SideType.GREEN, SideType.PONDS]
 
     @classmethod
+    @lru_cache(maxsize=20)
     def is_valid(cls, input_string):
         if input_string is None:
             return False
@@ -43,6 +48,7 @@ class SideType(Enum):
         return True
 
     @classmethod
+    @lru_cache(maxsize=None)
     def extract_type(cls, input_string):
         if isinstance(input_string, SideType):
             return input_string
@@ -50,6 +56,7 @@ class SideType(Enum):
         return cls.from_character(input_string)
 
     @classmethod
+    @lru_cache(maxsize=20)
     def from_character(cls, char):
         if char is None:
             return SideType.UNKNOWN
@@ -59,10 +66,12 @@ class SideType(Enum):
                 return member
         raise ValueError(f"No enum member with character '{char}'")
 
+    @lru_cache(maxsize=None)
     def to_character(self):
         return self.value
 
     @classmethod
+    @lru_cache(maxsize=None)
     def to_string(cls):
         string = ""
         for member in cls:
