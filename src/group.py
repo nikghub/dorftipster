@@ -141,7 +141,7 @@ class Group:
             # therefore return all subsections where the side type matches the group type
             # and the side is not marked as isolated
             result = []
-            for s in TileSubsection.get_side_values():
+            for s in TileSubsection.get_all_values():
                 side = tile.get_side(s)
                 if side.type in compatible_types and not side.isolated:
                     result.append(s)
