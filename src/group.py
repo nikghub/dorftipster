@@ -136,29 +136,15 @@ class Group:
             # if the tile that connects to the group is isolated, only that tile is returned
             return [origin_subsection]
 
-        if tile.get_center().type in compatible_types:
-            # we may reach all sides of the tile through the center,
-            # therefore return all subsections where the side type matches the group type
-            # and the side is not marked as isolated
-            result = []
-            for s in TileSubsection.get_all_values():
-                side = tile.get_side(s)
-                if side.type in compatible_types and not side.isolated:
-                    result.append(s)
-            return result
+        connected_subsection_groups = Group.get_connected_subsection_groups(tile)
+        for group_type, connected_subsections in connected_subsection_groups:
+            if group_type in compatible_types and origin_subsection in connected_subsections:
+                return connected_subsections
 
-        start_idx = TileSubsection.get_index(origin_subsection)
-
-        # iterate clockwise and counter clockwise
-        # to collect connected subsections of sides where the type matches
-        return list(set(
-            [origin_subsection] + \
-            self._iterate_subsection_sides(tile, self.type, start_idx, start_idx+1) + \
-            self._iterate_subsection_sides(tile, self.type, start_idx, start_idx-1)
-            ))
+        return []
 
     @classmethod
-    def get_connected_subsection_groups(cls, tile):
+    def get_connected_subsection_groups(cls, tile) -> List[Tuple[SideType, List[TileSubsection]]]:
         """
         Returns all of the subsection groups for the tile. That is:
         All subsections that are connected and have a type that is compatible with groups.
@@ -169,13 +155,14 @@ class Group:
         Returns:
             A list of pairs, where each pair consists of
             the shared type and the corresponding subsections.
+            Note that there may be multiple groups for the same type (if they are not connected).
         """
         subsection_groups = []
         center_type = tile.get_center().type
         if center_type in cls.COMPATIBLE_GROUP_TYPES:
             # we may reach all sides of the tile through the center,
             # therefore return all subsections where the side type matches the center type
-            # andthe side is not marked as isolated
+            # and the side is not marked as isolated
             center_group = []
 
             for s in TileSubsection.get_all_values():

@@ -924,8 +924,10 @@ def test_group_connected_subsections():
                                 assert len(connected_subsections) == expected_size
 
                                 # verify that the logic of both methods matches regarding grouping subsections
-                                typed_subsections = [(type, subsections) for type, subsections in Group.get_connected_subsection_groups(tile)\
-                                       if group_connecting_subsection in subsections]
+                                typed_subsections = [
+                                    (type, subsections) for type, subsections in Group.get_connected_subsection_groups(tile)\
+                                        if group_connecting_subsection in subsections
+                                    ]
                                 assert len(typed_subsections) == 1
                                 type, subsections = typed_subsections[0]
                                 assert type == group_type
