@@ -355,8 +355,9 @@ class Session(QObject):
                 side_types=side_type_seq, coordinates=coords, center_type=center_type
             )
             for candidate in open_tile.create_all_orientations(include_self=True):
-                self._enrich_tile(candidate, quest_type)
+                self._update_tile_side_placements(candidate)
                 if candidate.get_placement() != Tile.Placement.NOT_POSSIBLE:
+                    self._update_group_participation(candidate)
                     candidates.append(candidate)
 
         return candidates
@@ -390,9 +391,11 @@ class Session(QObject):
         candidate = Tile(
             side_types=side_types, center_type=center_type, coordinates=coordinates
         )
-        self._enrich_tile(candidate, quest_type)
+        self._update_tile_side_placements(candidate)
         if candidate.get_placement() == Tile.Placement.NOT_POSSIBLE:
             return None
+
+        self._update_group_participation(candidate)
 
         return candidate
 
@@ -560,8 +563,9 @@ class Session(QObject):
             return None
 
         for rotation in rotations:
-            self._enrich_tile(rotation)
+            self._update_tile_side_placements(rotation)
             if rotation.get_placement() != Tile.Placement.NOT_POSSIBLE:
+                self._update_group_participation(rotation)
                 valid_rotations.append(rotation)
 
         # rotating not allowed as placement not possible for all rotations
@@ -780,9 +784,3 @@ class Session(QObject):
 
     def _update_group_participation(self, tile):
         Group.update_group_participation(self.groups, self.played_tiles, tile)
-
-    def _enrich_tile(self, tile, quest_type=None):
-        self._update_tile_side_placements(tile)
-        self._update_group_participation(tile)
-
-        # TODO possibly make use of quest type
