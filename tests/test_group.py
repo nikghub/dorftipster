@@ -154,7 +154,7 @@ def test_group_connecting_tile():
     # at coordinate (9, -2) we expect to be able to connect to the group at two tile subsections
     connecting_coordinate = (9, -2)
     assert connecting_coordinate in group.possible_extensions
-    assert sorted([TileSubsection.LOWER_LEFT, TileSubsection.LOWER_RIGHT]) == group.possible_extensions[connecting_coordinate]
+    assert sorted([TileSubsection.LOWER_LEFT, TileSubsection.LOWER_RIGHT]) == sorted(group.possible_extensions[connecting_coordinate])
 
     candidate_tile_group_participation_expectations = [
         (session.prepare_candidate([SideType.GREEN, SideType.GREEN, SideType.GREEN, SideType.GREEN, SideType.GREEN, SideType.GREEN],
