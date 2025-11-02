@@ -9,12 +9,12 @@ from src.side_type import SideType
 
 class Tile:
     _opposite_dict = {
-        TileSubsection.TOP.value: TileSubsection.BOTTOM,
-        TileSubsection.UPPER_RIGHT.value: TileSubsection.LOWER_LEFT,
-        TileSubsection.LOWER_RIGHT.value: TileSubsection.UPPER_LEFT,
-        TileSubsection.BOTTOM.value: TileSubsection.TOP,
-        TileSubsection.LOWER_LEFT.value: TileSubsection.UPPER_RIGHT,
-        TileSubsection.UPPER_LEFT.value: TileSubsection.LOWER_RIGHT,
+        TileSubsection.TOP: TileSubsection.BOTTOM,
+        TileSubsection.UPPER_RIGHT: TileSubsection.LOWER_LEFT,
+        TileSubsection.LOWER_RIGHT: TileSubsection.UPPER_LEFT,
+        TileSubsection.BOTTOM: TileSubsection.TOP,
+        TileSubsection.LOWER_LEFT: TileSubsection.UPPER_RIGHT,
+        TileSubsection.UPPER_LEFT: TileSubsection.LOWER_RIGHT,
     }
 
     class Placement(Enum):
@@ -42,13 +42,13 @@ class Tile:
         self._neighbor_coordinates = {}
         if self.coordinates is not None:
             self._neighbor_coordinates = {
-                TileSubsection.TOP.value: (coordinates[0], coordinates[1] + 4),
-                TileSubsection.UPPER_RIGHT.value: (coordinates[0] + 3, coordinates[1] + 2),
-                TileSubsection.LOWER_RIGHT.value: (coordinates[0] + 3, coordinates[1] - 2),
-                TileSubsection.BOTTOM.value: (coordinates[0], coordinates[1] - 4),
-                TileSubsection.LOWER_LEFT.value: (coordinates[0] - 3, coordinates[1] - 2),
-                TileSubsection.UPPER_LEFT.value: (coordinates[0] - 3, coordinates[1] + 2),
-                TileSubsection.CENTER.value: (coordinates[0], coordinates[1]),
+                TileSubsection.TOP: (coordinates[0], coordinates[1] + 4),
+                TileSubsection.UPPER_RIGHT: (coordinates[0] + 3, coordinates[1] + 2),
+                TileSubsection.LOWER_RIGHT: (coordinates[0] + 3, coordinates[1] - 2),
+                TileSubsection.BOTTOM: (coordinates[0], coordinates[1] - 4),
+                TileSubsection.LOWER_LEFT: (coordinates[0] - 3, coordinates[1] - 2),
+                TileSubsection.UPPER_LEFT: (coordinates[0] - 3, coordinates[1] + 2),
+                TileSubsection.CENTER: (coordinates[0], coordinates[1]),
             }
 
     def __eq__(self, other):
@@ -162,7 +162,7 @@ class Tile:
         return self._subsections[subsection]
 
     def get_neighbor_coords(self, subsection):
-        return self._neighbor_coordinates[subsection.value]
+        return self._neighbor_coordinates[subsection]
 
     def get_neighbor_coords_values(self):
         # return an immutable sequence of neighbor coordinate tuples
@@ -256,7 +256,7 @@ class Tile:
     @lru_cache(maxsize=None)
     def get_opposing(cls, subsection: TileSubsection) -> Optional[TileSubsection]:
         if subsection.value in cls._opposite_dict:
-            return cls._opposite_dict[subsection.value]
+            return cls._opposite_dict[subsection]
         return None
 
     @classmethod
