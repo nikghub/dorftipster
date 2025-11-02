@@ -2,7 +2,7 @@ import pytest
 
 from src.tile import Tile
 from src.side import Side
-from src.side_type import SideType
+from src.side_type import SideType, SIDE_TYPE_TO_CHAR
 from src.tile_subsection import TileSubsection
 from src.session import Session
 
@@ -57,8 +57,8 @@ def test_extract_subsection_sides_isolation():
 
 def test_extract_subsection_sides_isolation_single_char():
     single_char_type = SideType.CROPS
-    single_char_sides = Tile.extract_subsection_sides(f"{single_char_type.value}")
-    single_char_isolated_sides = Tile.extract_subsection_sides(f"({single_char_type.value})")
+    single_char_sides = Tile.extract_subsection_sides(f"{SIDE_TYPE_TO_CHAR[single_char_type]}")
+    single_char_isolated_sides = Tile.extract_subsection_sides(f"({SIDE_TYPE_TO_CHAR[single_char_type]})")
     assert list(single_char_sides.values()) == [Side(single_char_type, False)] * 6
     # isolation should be ignored for single type shortcut
     assert single_char_sides == single_char_isolated_sides
@@ -83,8 +83,8 @@ def test_extract_subsection_sides_invalid_input():
 
 def test_is_valid_side_sequence():
     for type in SideType.all_types():
-        assert Tile.is_valid_side_sequence(type.value)
-        assert Tile.is_valid_side_sequence(type.value*6)
+        assert Tile.is_valid_side_sequence(SIDE_TYPE_TO_CHAR[type])
+        assert Tile.is_valid_side_sequence(SIDE_TYPE_TO_CHAR[type]*6)
 
     for i in range(1, 10):
         if i == 1 or i == 6:
@@ -100,8 +100,8 @@ def test_is_valid_side_sequence():
     assert not Tile.is_valid_side_sequence("abcdef")
 
     # single type in isolating brackets should be ignored
-    assert Tile.is_valid_side_sequence(f"{SideType.CROPS.value}")
-    assert Tile.is_valid_side_sequence(f"({SideType.CROPS.value})")
+    assert Tile.is_valid_side_sequence(f"{SIDE_TYPE_TO_CHAR[SideType.CROPS]}")
+    assert Tile.is_valid_side_sequence(f"({SIDE_TYPE_TO_CHAR[SideType.CROPS]})")
 
     # use of isolating brackets
     example_sequence = get_example_side_sequence(6)

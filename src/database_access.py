@@ -6,6 +6,7 @@ from typing import List, Tuple
 import pandas as pd
 
 from src.side import Side
+from src.side_type import SIDE_TYPE_TO_CHAR
 
 class DatabaseAccess():
     """
@@ -323,8 +324,8 @@ class DatabaseAccess():
             VALUES (?, ?, ?, ?)
             ''',
             (tile.get_side_type_seq(),
-                tile.get_center().type.value,
-                tile.quest.type.value if tile.quest is not None else "",
+                SIDE_TYPE_TO_CHAR[tile.get_center().type],
+                SIDE_TYPE_TO_CHAR[tile.quest.type] if tile.quest is not None else "",
                 session_id))
         tile_id = self.cursor.lastrowid
 

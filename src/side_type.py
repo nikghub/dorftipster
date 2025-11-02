@@ -1,22 +1,19 @@
-from enum import Enum
+from enum import IntEnum
 from functools import lru_cache
 
-class SideType(Enum):
+class SideType(IntEnum):
     # types that may be placed against any
-    WOODS = 'W'
-    HOUSE = 'H'
-    GREEN = 'G'
-    CROPS = 'C'
-    PONDS = 'P' # may be water or land
-    STATION = 'S' # connects with any type including water and train
+    WOODS = 0
+    HOUSE = 1
+    GREEN = 2
+    CROPS = 3
+    PONDS = 4  # may be water or land
+    STATION = 5  # connects with any type including water and train
     # types that may only be placed against similar type
-    RIVER = 'R'
-    TRAIN = 'T'
+    RIVER = 6
+    TRAIN = 7
 
-    UNKNOWN = '?'
-
-    def __lt__(self, other):
-        return self.value < other.value
+    UNKNOWN = 8
 
     @classmethod
     @lru_cache(maxsize=None)
@@ -26,70 +23,85 @@ class SideType(Enum):
     @classmethod
     @lru_cache(maxsize=None)
     def get_values(cls):
-        return tuple(cls.__members__.values())[:-1]
+        return tuple(t for t in cls if t != cls.UNKNOWN)
 
     @classmethod
     @lru_cache(maxsize=None)
     def is_equivalent_to_green(cls, side_type):
-        return side_type in [SideType.STATION, SideType.GREEN, SideType.PONDS]
+        return side_type in (cls.STATION, cls.GREEN, cls.PONDS)
 
     @classmethod
     @lru_cache(maxsize=20)
-    def is_valid(cls, input_string):
-        if input_string is None:
+    def is_valid(cls, input_value):
+        if input_value is None:
             return False
-        if isinstance(input_string, SideType):
+        if isinstance(input_value, cls):
             return True
-
+        if not isinstance(input_value, str):
+            return False
         try:
-            cls.from_character(input_string)
+            cls.from_character(input_value)
         except ValueError:
             return False
         return True
 
     @classmethod
     @lru_cache(maxsize=None)
-    def extract_type(cls, input_string):
-        if isinstance(input_string, SideType):
-            return input_string
-
-        return cls.from_character(input_string)
+    def extract_type(cls, input_value):
+        if isinstance(input_value, cls):
+            return input_value
+        if isinstance(input_value, int):
+            return cls(input_value)
+        return cls.from_character(input_value)
 
     @classmethod
     @lru_cache(maxsize=20)
     def from_character(cls, char):
-        if char is None:
-            return SideType.UNKNOWN
-
-        for member in cls:
-            if member.value == char.upper():
-                return member
-        raise ValueError(f"No enum member with character '{char}'")
+        if not char:
+            return cls.UNKNOWN
+        try:
+            return SIDE_TYPE_CHAR_MAP[char.upper()]
+        except KeyError:
+            raise ValueError(f"No enum member with character '{char}'")
 
     @lru_cache(maxsize=None)
     def to_character(self):
-        return self.value
+        return SIDE_TYPE_TO_CHAR[self]
 
     @classmethod
     @lru_cache(maxsize=None)
     def to_string(cls):
         string = ""
         for member in cls:
-            if member == SideType.WOODS:
-                string += f"{member.value} - Woods/Trees\n"
-            elif member == SideType.HOUSE:
-                string += f"{member.value} - Houses\n"
-            elif member == SideType.GREEN:
-                string += f"{member.value} - Green/Plains\n"
-            elif member == SideType.CROPS:
-                string += f"{member.value} - Crops/Fields\n"
-            elif member == SideType.PONDS:
-                string += f"{member.value} - Ponds/Water\n"
-            elif member == SideType.STATION:
-                string += f"{member.value} - Station (Watertemple)\n"
-            elif member == SideType.RIVER:
-                string += f"{member.value} - Rivers\n"
-            elif member == SideType.TRAIN:
-                string += f"{member.value} - Train tracks\n"
+            if member == cls.WOODS:
+                string += f"{SIDE_TYPE_TO_CHAR[member]} - Woods/Trees\n"
+            elif member == cls.HOUSE:
+                string += f"{SIDE_TYPE_TO_CHAR[member]} - Houses\n"
+            elif member == cls.GREEN:
+                string += f"{SIDE_TYPE_TO_CHAR[member]} - Green/Plains\n"
+            elif member == cls.CROPS:
+                string += f"{SIDE_TYPE_TO_CHAR[member]} - Crops/Fields\n"
+            elif member == cls.PONDS:
+                string += f"{SIDE_TYPE_TO_CHAR[member]} - Ponds/Water\n"
+            elif member == cls.STATION:
+                string += f"{SIDE_TYPE_TO_CHAR[member]} - Station (Watertemple)\n"
+            elif member == cls.RIVER:
+                string += f"{SIDE_TYPE_TO_CHAR[member]} - Rivers\n"
+            elif member == cls.TRAIN:
+                string += f"{SIDE_TYPE_TO_CHAR[member]} - Train tracks\n"
 
         return string
+
+SIDE_TYPE_CHAR_MAP = {
+    'W': SideType.WOODS,
+    'H': SideType.HOUSE,
+    'G': SideType.GREEN,
+    'C': SideType.CROPS,
+    'P': SideType.PONDS,
+    'S': SideType.STATION,
+    'R': SideType.RIVER,
+    'T': SideType.TRAIN,
+    '?': SideType.UNKNOWN,
+}
+
+SIDE_TYPE_TO_CHAR = {v: k for k, v in SIDE_TYPE_CHAR_MAP.items()}
