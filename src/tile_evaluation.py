@@ -7,6 +7,7 @@ from src.side_type import SideType
 from src.tile_subsection import TileSubsection
 from src.tile import Tile
 from src.group import Group
+from src.constants import Constants
 
 
 class TileEvaluation:
@@ -235,7 +236,7 @@ class TileEvaluation:
                         and side_type in self.RESTRICTED_DICT
                         and (
                             side_type
-                            not in Group.COMPATIBLE_GROUP_TYPES[gp.group.type]
+                            not in Constants.COMPATIBLE_GROUP_TYPES[gp.group.type]
                             or s != subsection
                         )
                     ):
@@ -374,7 +375,7 @@ class TileEvaluation:
     def _skip_path_to_group(self, origin_group, distant_group, dist, path_coords):
         # distant groups of a different type will only be collected if they are direct neighbors
         if (
-            distant_group.type not in Group.COMPATIBLE_GROUP_TYPES[origin_group.type]
+            distant_group.type not in Constants.COMPATIBLE_GROUP_TYPES[origin_group.type]
             and dist > 0
         ):
             return True
@@ -399,7 +400,7 @@ class TileEvaluation:
                 is_last_coord = i == len(path_coords) - 1
                 if (
                     crossing_group_type
-                    not in Group.COMPATIBLE_GROUP_TYPES[origin_group.type]
+                    not in Constants.COMPATIBLE_GROUP_TYPES[origin_group.type]
                     or not is_last_coord
                 ) and dist > 0:
                     return True
@@ -542,7 +543,7 @@ class TileEvaluation:
                 distant_group = self.groups[distant_group_id]
                 factor = 1.0
 
-                if distant_group.type in Group.COMPATIBLE_GROUP_TYPES[extension_type]:
+                if distant_group.type in Constants.COMPATIBLE_GROUP_TYPES[extension_type]:
                     # boost restricted type extension
                     if Group.is_type_restricted(distant_group.type):
                         factor = self._GROUP_SIZE_BOOST_FACTOR[distant_group.type][

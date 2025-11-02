@@ -4,27 +4,9 @@ from typing import List, Dict, Tuple
 from src.side_type import SideType
 from src.tile_subsection import TileSubsection
 from src.tile import Tile
+from src.constants import Constants
 
 class Group:
-    # compatibility of a type with group types
-    COMPATIBLE_GROUP_TYPES = {
-        SideType.CROPS : [SideType.CROPS],
-        SideType.HOUSE : [SideType.HOUSE],
-        SideType.RIVER : [SideType.RIVER, SideType.PONDS, SideType.STATION],
-        SideType.PONDS : [SideType.PONDS, SideType.RIVER, SideType.STATION],
-        SideType.TRAIN : [SideType.TRAIN, SideType.STATION],
-        SideType.STATION : [SideType.STATION, SideType.RIVER, SideType.TRAIN, SideType.PONDS],
-        SideType.WOODS : [SideType.WOODS]
-        }
-    # types that allow a group creation
-    ALLOWED_GROUP_TYPES = [
-        SideType.CROPS,
-        SideType.HOUSE,
-        SideType.RIVER,
-        SideType.PONDS,
-        SideType.TRAIN,
-        SideType.WOODS
-    ]
 
     def __init__(self, start_tile: Tile, side_type: SideType,
                  subsections: List[TileSubsection], group_id=None):
@@ -48,7 +30,7 @@ class Group:
         if not isinstance(other, Group):
             return False
 
-        return self.type in Group.COMPATIBLE_GROUP_TYPES[other.type] and\
+        return self.type in Constants.COMPATIBLE_GROUP_TYPES[other.type] and\
                sorted(self.tile_coordinates) == sorted(other.tile_coordinates) and\
                self.size == other.size and\
                sorted(self.possible_extensions.keys()) == sorted(other.possible_extensions.keys())
@@ -69,7 +51,7 @@ class Group:
                 if Group._extend_group(group, played_tiles, tile, subsections):
                     extends_existing_group = True
 
-            if not extends_existing_group and side_type in Group.ALLOWED_GROUP_TYPES:
+            if not extends_existing_group and side_type in Constants.ALLOWED_GROUP_TYPES:
                 # create new group for the subsections that are not adding to any existing groups
                 new_group = Group(tile, side_type, subsections)
                 new_group.compute(played_tiles)
@@ -127,7 +109,7 @@ class Group:
             including the origin_subsection
         """
         origin_side = tile.get_side(origin_subsection)
-        compatible_types = self.COMPATIBLE_GROUP_TYPES[self.type]
+        compatible_types = Constants.COMPATIBLE_GROUP_TYPES[self.type]
         if origin_side.type not in compatible_types:
             # incompatible type at origin, therefore no connection to the group
             return []
@@ -159,7 +141,7 @@ class Group:
         """
         subsection_groups = []
         center_type = tile.get_center().type
-        if center_type in cls.COMPATIBLE_GROUP_TYPES:
+        if center_type in Constants.COMPATIBLE_GROUP_TYPES:
             # we may reach all sides of the tile through the center,
             # therefore return all subsections where the side type matches the center type
             # and the side is not marked as isolated
@@ -182,7 +164,7 @@ class Group:
             start_subsection = remaining_subsections[0]
             start_idx = TileSubsection.get_index(start_subsection)
             side_type = tile.get_side(start_subsection).type
-            if side_type not in cls.COMPATIBLE_GROUP_TYPES:
+            if side_type not in Constants.COMPATIBLE_GROUP_TYPES:
                 del remaining_subsections[0]
                 continue
 
@@ -202,7 +184,7 @@ class Group:
     @classmethod
     def _iterate_subsection_sides(cls, tile, side_type, start_idx, curr_idx):
         subsection = TileSubsection.at_index(curr_idx)
-        if tile.get_side(subsection).type in Group.COMPATIBLE_GROUP_TYPES[side_type] and \
+        if tile.get_side(subsection).type in Constants.COMPATIBLE_GROUP_TYPES[side_type] and \
             abs(start_idx - curr_idx) < len(TileSubsection.get_side_values()):
             return [subsection] +\
                    cls._iterate_subsection_sides(
@@ -235,7 +217,7 @@ class Group:
 
         for subsection in subsections:
             if subsection in self.possible_extensions[new_tile.coordinates] and \
-               new_tile.get_side(subsection).type in self.COMPATIBLE_GROUP_TYPES[self.type]:
+               new_tile.get_side(subsection).type in Constants.COMPATIBLE_GROUP_TYPES[self.type]:
                 return True
 
         return False
@@ -280,7 +262,7 @@ class Group:
             opposing_tile = played_tiles[opposing_tile_coords]
 
             if opposing_tile.get_side(opposing_subsection).type not in \
-                   self.COMPATIBLE_GROUP_TYPES[self.type]:
+                   Constants.COMPATIBLE_GROUP_TYPES[self.type]:
                 # opposing side is of an incompatible type -> no further expansion
                 continue
 

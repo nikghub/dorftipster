@@ -6,6 +6,7 @@ from src.tile import Tile
 from src.session import Session
 from src.group import Group
 from src.tile_evaluation import TileEvaluation
+from src.constants import Constants
 
 from tests.utils import get_sequence
 
@@ -802,7 +803,7 @@ def test_group_type_compatibility():
         first_coord = (0,0)
         session.place_candidate(session.prepare_candidate([first_tile_type], first_tile_type, first_coord))
 
-        if first_tile_type in Group.ALLOWED_GROUP_TYPES:
+        if first_tile_type in Constants.ALLOWED_GROUP_TYPES:
             # new group
             assert_group_at_index(groups=session.groups, index=0,
                                   expected_size=7, expected_coordinates=[first_coord], expected_type=first_tile_type)
@@ -823,13 +824,13 @@ def test_group_type_compatibility():
 
             session.place_candidate(candidate)
 
-            if first_tile_type in Group.ALLOWED_GROUP_TYPES:
+            if first_tile_type in Constants.ALLOWED_GROUP_TYPES:
                 # extension of existing group
-                if second_tile_type in Group.COMPATIBLE_GROUP_TYPES[first_tile_type]:
+                if second_tile_type in Constants.COMPATIBLE_GROUP_TYPES[first_tile_type]:
                     assert_group_at_index(groups=session.groups, index=0,
                                           expected_size=14, expected_coordinates=[first_coord, second_coord], expected_type=first_tile_type)
                 # new group
-                elif second_tile_type in Group.ALLOWED_GROUP_TYPES:
+                elif second_tile_type in Constants.ALLOWED_GROUP_TYPES:
                     assert_group_at_index(groups=session.groups, index=0,
                                           expected_size=7, expected_coordinates=[first_coord], expected_type=first_tile_type)
                     assert_group_at_index(groups=session.groups, index=1,
@@ -839,10 +840,11 @@ def test_group_type_compatibility():
                     assert_group_at_index(groups=session.groups, index=0,
                                           expected_size=7, expected_coordinates=[first_coord], expected_type=first_tile_type)
             # new group
-            elif second_tile_type in Group.ALLOWED_GROUP_TYPES:
+            elif second_tile_type in Constants.ALLOWED_GROUP_TYPES:
                 # ensure that we will pick up STATION as type which will not have created a new group by itself,
                 # but should be considered a part of the new group that we create with an allowed group type
-                if first_tile_type in Group.COMPATIBLE_GROUP_TYPES and second_tile_type in Group.COMPATIBLE_GROUP_TYPES[first_tile_type]:
+                if first_tile_type in Constants.COMPATIBLE_GROUP_TYPES \
+                    and second_tile_type in Constants.COMPATIBLE_GROUP_TYPES[first_tile_type]:
                     assert_group_at_index(groups=session.groups, index=0,
                                           expected_size=14, expected_coordinates=[second_coord, first_coord], expected_type=second_tile_type)
                 else:
