@@ -1,6 +1,7 @@
 from src.tree import Tree, TreeNode
 from src.tile import Tile
 from src.side_type import SideType
+from src.tile_subsection import TileSubsection
 
 def test_tree_init():
     tree = Tree()
@@ -72,7 +73,7 @@ def test_add_tile():
         assert type in tree.root.children
 
     for orientation in tile.create_all_orientations():
-        found_tiles = tree.find_matching_tiles([side.type for side in orientation.get_sides().values()])
+        found_tiles = tree.find_matching_tiles([orientation.get_side(s).type for s in TileSubsection.get_side_values()])
         assert len(found_tiles) == 1
 
     tree.remove_tile(tile)

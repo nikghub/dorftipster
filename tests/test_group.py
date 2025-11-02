@@ -36,7 +36,7 @@ def test_init():
     tile = Tile([SideType.CROPS, SideType.CROPS, SideType.WOODS, SideType.WOODS, SideType.GREEN, SideType.GREEN],
                 SideType.CROPS, (0,0))
     group_type = SideType.CROPS
-    subsections = [subsection for subsection, side in tile.subsections.items() if side.type == group_type]
+    subsections = [sub for sub in TileSubsection.get_all_values() if tile.get_side(sub).type == group_type]
     group = Group(tile, group_type, subsections)
 
     assert group.start_tile.coordinates == tile.coordinates

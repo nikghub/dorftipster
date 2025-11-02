@@ -389,7 +389,8 @@ def test_compute_candidate_tiles_first_tile():
         assert candidate.get_center().type.to_character() == center_type
 
         # no neighboring tiles yet, therefore all unknown
-        for side in candidate.subsections.values():
+        for subsection in TileSubsection.get_all_values():
+            side = candidate.get_side(subsection)
             assert side.placement == Side.Placement.UNKNOWN_MATCH
 
 def test_compute_candidate_tiles():
@@ -412,13 +413,15 @@ def test_compute_candidate_tiles():
                 assert len(candidates) == 6
 
             for candidate in candidates:
-                for side in candidate.get_sides().values():
+                for subsection in TileSubsection.get_side_values():
+                    side = candidate.get_side(subsection)
                     assert side.type == type
                 assert candidate.get_center().type == type
 
                 contains_imperfect_sides = False
-                for subsection, side in candidate.subsections.items():
-                    if candidate.neighbor_coordinates[subsection.value] == center_coordinate:
+                for subsection in TileSubsection.get_all_values():
+                    side = candidate.get_side(subsection)
+                    if candidate.get_neighbor_coords(subsection) == center_coordinate:
                         # side connects to center
 
                         if type in TileEvaluation.RESTRICTED_DICT and \
@@ -489,11 +492,11 @@ def test_get_rotated_candidate():
     candidate = session.prepare_candidate(original_side_types, SideType.TRAIN, (3, -2))
     for i in [-1, 1]:
         rotated_candidate = session.get_rotated_candidate(candidate, i)
-        assert [side.type for side in rotated_candidate.get_sides().values()] == expected_rotated_side_types
+        assert [rotated_candidate.get_side(s).type for s in TileSubsection.get_side_values()] == expected_rotated_side_types
 
         for j in [-1, 1]:
             again_rotated_candidate = session.get_rotated_candidate(rotated_candidate, j)
-            assert [side.type for side in again_rotated_candidate.get_sides().values()] == original_side_types
+            assert [again_rotated_candidate.get_side(s).type for s in TileSubsection.get_side_values()] == original_side_types
 
     # restricted rotation
     expected_rotated_sequences = [
@@ -507,13 +510,13 @@ def test_get_rotated_candidate():
     eval_candidates = [candidate for candidate in candidates if candidate.coordinates == (3, 2)]
     assert len(eval_candidates) == 4
     for candidate in eval_candidates:
-        assert [side.type for side in candidate.get_sides().values()] in expected_rotated_sequences
+        assert [candidate.get_side(s).type for s in TileSubsection.get_side_values()] in expected_rotated_sequences
 
     curr_candidate = eval_candidates[0]
     for i in range(len(expected_rotated_sequences)):
         rotated_candidate = session.get_rotated_candidate(curr_candidate, 1)
         assert rotated_candidate != curr_candidate
-        assert [side.type for side in rotated_candidate.get_sides().values()] in expected_rotated_sequences
+        assert [rotated_candidate.get_side(s).type for s in TileSubsection.get_side_values()] in expected_rotated_sequences
 
         rotated_candidate = session.get_rotated_candidate(rotated_candidate, -1)
         assert rotated_candidate == curr_candidate
@@ -600,8 +603,8 @@ def test_compute_open_tiles_for_tile():
     assert candidate.coordinates not in open_tiles_for_candidate
 
     for subsection in TileSubsection.get_side_values():
-        if candidate.neighbor_coordinates[subsection.value] not in session.played_tiles:
-            assert candidate.neighbor_coordinates[subsection.value] in open_tiles_for_candidate
+        if candidate.get_neighbor_coords(subsection) not in session.played_tiles:
+            assert candidate.get_neighbor_coords(subsection) in open_tiles_for_candidate
 
 
 def test_watch_unwatch_coordinates_tiles_seen():
@@ -612,10 +615,11 @@ def test_watch_unwatch_coordinates_tiles_seen():
     session.load_from_csv("./tests/data/num_seen_tiles.csv", simulate_tile_placement=False)
 
     def get_tile_placement(played_tiles, tile):
-        for subsection, side in tile.get_sides().items():
-            neighbor_coordinates = tile.neighbor_coordinates[subsection.value]
+        for subsection in TileSubsection.get_side_values():
+            side = tile.get_side(subsection)
+            neighbor_coordinates = tile.get_neighbor_coords(subsection)
             if neighbor_coordinates in played_tiles:
-                opposing_side = played_tiles[neighbor_coordinates].get_sides()[Tile.get_opposing(subsection)]
+                opposing_side = played_tiles[neighbor_coordinates].get_side(Tile.get_opposing(subsection))
                 side.placement = TileEvaluation.compute_side_placement_match(side.type, opposing_side.type)
 
         return tile.get_placement()
@@ -625,7 +629,7 @@ def test_watch_unwatch_coordinates_tiles_seen():
         # match all known sides of the open position
         count = 0
         for tile in played_tiles.values():
-            side_types = [side.type for side in tile.get_sides().values()]
+            side_types = [tile.get_side(s).type for s in TileSubsection.get_side_values()]
             for i in range(len(side_types)):
                 rotated_sides = side_types[i:] + side_types[:i]
                 candidate = Tile(side_types=rotated_sides,

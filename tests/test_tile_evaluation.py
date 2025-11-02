@@ -83,7 +83,7 @@ def assert_perspective_groups(expected_candidate_coordinate_perspective_groups, 
         assert len(eval_candidates) == len(expected_candidate_coordinate_perspective_groups[coordinates])
 
         for candidate in eval_candidates:
-            actual_subsection_side_types = [side.type for side in candidate.tile.get_sides().values()]
+            actual_subsection_side_types = [candidate.tile.get_side(s).type for s in TileSubsection.get_side_values()]
 
             expectation = None
             for side_types, expected_group_type_distant_group_extensions in expected_candidate_coordinate_perspective_groups[coordinates]:
@@ -292,7 +292,7 @@ def test_side_placement_perfectly_closed_neighbor():
 
     for i in range(len(eval_candidates)):
         actual_subsection_side_types = \
-            { sub : side.type for sub, side in eval_candidates[i].tile.get_sides().items()}
+            { sub : eval_candidates[i].tile.get_side(sub).type for sub in TileSubsection.get_side_values()}
 
         num_perfectly_closed, num_perfect_to_perfect, num_perfect_to_imperfect,\
             num_imperfect_to_perfect, num_imperfect_to_imperfect, num_unknown, \
@@ -467,7 +467,7 @@ def test_restricted_orientation():
         }
     ]
 
-    actual_subsection_side_types = { sub : side.type for sub, side in eval_candidates[0].tile.get_sides().items()}
+    actual_subsection_side_types = { sub : eval_candidates[0].tile.get_side(sub).type for sub in TileSubsection.get_side_values()}
     assert actual_subsection_side_types in expected_high_rating_subsection_side_types
     assert eval_candidates[0].rating_detail.restricted_type_orientation_rating > \
             eval_candidates[1].rating_detail.restricted_type_orientation_rating

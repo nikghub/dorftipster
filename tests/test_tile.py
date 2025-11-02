@@ -137,7 +137,7 @@ def test_tile_rotation():
         rotated_tiles = tile.get_rotations()
         assert len(rotated_tiles) == len(expected_rotated_sequences)
 
-        actual_rotated_sequences =[[side.type for side in rotated_tile.get_sides().values()] for rotated_tile in rotated_tiles]
+        actual_rotated_sequences =[[rotated_tile.get_side(s).type for s in TileSubsection.get_side_values()] for rotated_tile in rotated_tiles]
         assert sequence not in actual_rotated_sequences
 
         for i in range(len(expected_rotated_sequences)):

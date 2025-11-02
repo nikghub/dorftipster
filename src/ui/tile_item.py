@@ -53,7 +53,7 @@ class TileItem(QGraphicsPolygonItem):
             radius -= UIConstants.HIGHLIGHT_BORDER_WIDTH
 
             # placement color indication per side of the candidate tile
-            for subsection in self.tile.get_sides().keys():
+            for subsection in TileSubsection.get_side_values():
                 self.draw_triangle(
                     painter,
                     self.tile,
@@ -118,17 +118,17 @@ class TileItem(QGraphicsPolygonItem):
         painter.setPen(Qt.NoPen)
         if landscape_color:
             painter.setBrush(
-                QBrush(UIConstants.LANDSCAPE_COLORS[tile.subsections[subsection].type])
+                QBrush(UIConstants.LANDSCAPE_COLORS[tile.get_side(subsection).type])
             )
         else:
             painter.setBrush(
                 QBrush(
-                    UIConstants.PLACEMENT_COLORS[tile.subsections[subsection].placement]
+                    UIConstants.PLACEMENT_COLORS[tile.get_side(subsection).placement]
                 )
             )
         painter.drawPolygon(QPolygonF(points))
 
-        if landscape_color and tile.subsections[subsection].isolated:
+        if landscape_color and tile.get_side(subsection).isolated:
             # draw another triangle with green which will
             # disconnect the actual type color from the center
             points = get_points(

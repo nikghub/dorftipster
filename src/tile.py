@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from functools import lru_cache
 
 from src.tile_subsection import TileSubsection
@@ -30,8 +30,8 @@ class Tile:
             self.subsections: List[TileSubsection] = subsections
 
     def __init__(self, side_types, center_type, coordinates):
-        self.subsections = Tile.extract_subsection_sides(side_types)
-        self.subsections[TileSubsection.CENTER] = Side(
+        self._subsections = Tile.extract_subsection_sides(side_types)
+        self._subsections[TileSubsection.CENTER] = Side(
             SideType.extract_type(center_type)
         )
 
@@ -39,9 +39,9 @@ class Tile:
         self.quest = None
         self.group_participation: Dict[str, Tile.GroupParticipation] = {}
         # store locally as optimization
-        self.neighbor_coordinates = {}
+        self._neighbor_coordinates = {}
         if self.coordinates is not None:
-            self.neighbor_coordinates = {
+            self._neighbor_coordinates = {
                 'TOP': (coordinates[0], coordinates[1] + 4),
                 'UR': (coordinates[0] + 3, coordinates[1] + 2),
                 'LR': (coordinates[0] + 3, coordinates[1] - 2),
@@ -54,7 +54,7 @@ class Tile:
     def __eq__(self, other):
         if isinstance(other, Tile):
             return (
-                self.subsections == other.subsections
+                self._subsections == other._subsections
                 and self.coordinates == other.coordinates
             )
         return False
@@ -155,29 +155,34 @@ class Tile:
 
         return True
 
-    def get_sides(self):
-        return {
-            subsection: side
-            for subsection, side in self.subsections.items()
-            if subsection != TileSubsection.CENTER
-        }
+    def get_center(self) -> Side:
+        return self._subsections[TileSubsection.CENTER]
 
-    def get_center(self):
-        return self.subsections[TileSubsection.CENTER]
+    def get_side(self, subsection: TileSubsection) -> Side:
+        return self._subsections[subsection]
+
+    def get_neighbor_coords(self, subsection):
+        return self._neighbor_coordinates[subsection.value]
+
+    def get_neighbor_coords_values(self):
+        # return an immutable sequence of neighbor coordinate tuples
+        return tuple(self._neighbor_coordinates.values())
 
     def create_all_orientations(self, include_self=True):
         orientations = []
 
         # collect all permutations of the sequence
-        sides = [
-            Side(side.type, side.isolated) for side in self.get_sides().values()
-        ]  # ignore placement
+        sides = []
+        for subsection in TileSubsection.get_side_values():
+            side = self.get_side(subsection)
+            sides.append(Side(side.type, side.isolated))
+
         for i in range(len(sides)):
             rotated_sides = sides[i:] + sides[:i]
             if rotated_sides != sides or include_self:
                 rotated_tile = Tile(
                     side_types=rotated_sides,
-                    center_type=self.subsections[TileSubsection.CENTER].type,
+                    center_type=self.get_center().type,
                     coordinates=self.coordinates,
                 )
                 if rotated_tile not in orientations:
@@ -189,7 +194,8 @@ class Tile:
 
     def get_side_type_seq(self):
         seq = ""
-        for side in self.get_sides().values():
+        for subsection in TileSubsection.get_side_values():
+            side = self.get_side(subsection)
             if side.isolated:
                 seq += "(" + side.type.to_character() + ")"
             else:
@@ -209,8 +215,9 @@ class Tile:
 
     def get_num_perfectly_closed(self, played_tiles):
         num_perfectly_closed = 0
-        for subsection, side in self.get_sides().items():
-            neighbor_coords = self.neighbor_coordinates[subsection.value]
+        for subsection in TileSubsection.get_side_values():
+            side = self.get_side(subsection)
+            neighbor_coords = self.get_neighbor_coords(subsection)
             if neighbor_coords not in played_tiles:
                 continue
             neigbor_tile = played_tiles[neighbor_coords]
@@ -247,12 +254,7 @@ class Tile:
 
     @classmethod
     @lru_cache(maxsize=None)
-    def get_opposite_dict(cls):
-        return cls._opposite_dict
-
-    @classmethod
-    @lru_cache(maxsize=None)
-    def get_opposing(cls, subsection):
+    def get_opposing(cls, subsection: TileSubsection) -> Optional[TileSubsection]:
         if subsection.value in cls._opposite_dict:
             return cls._opposite_dict[subsection.value]
         return None
@@ -289,14 +291,14 @@ class Tile:
 
     def _get_subsection_placements(self, neighbor_tile=None):
         subsection_placements = {
-            subsection: side.placement for subsection, side in self.get_sides().items()
+            sub: self.get_side(sub).placement for sub in TileSubsection.get_side_values()
         }
         if neighbor_tile is not None:
             for subsection in TileSubsection.get_side_values():
                 # update with the placement of the candidate tile
-                if self.neighbor_coordinates[subsection.value] == neighbor_tile.coordinates:
-                    subsection_placements[subsection] = neighbor_tile.subsections[
+                if self.get_neighbor_coords(subsection) == neighbor_tile.coordinates:
+                    subsection_placements[subsection] = neighbor_tile.get_side(
                         Tile.get_opposing(subsection)
-                    ].placement
+                    ).placement
                     break
         return subsection_placements

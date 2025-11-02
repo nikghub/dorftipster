@@ -1,7 +1,7 @@
 from PySide6.QtCore import QPointF
 
 from src.constants import UIConstants
-
+from src.tile_subsection import TileSubsection
 from src.ui.tile_item import TileItem
 
 
@@ -25,7 +25,7 @@ class LandscapeTileItem(TileItem):
             radius -= UIConstants.BORDER_WIDTH
 
         # draw side types as triangles
-        for subsection in self.tile.get_sides().keys():
+        for subsection in TileSubsection.get_side_values():
             self.draw_triangle(
                 painter,
                 self.tile,
