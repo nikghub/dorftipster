@@ -30,7 +30,7 @@ class Tile:
             self.subsections: List[TileSubsection] = subsections
 
     def __init__(self, side_types, center_type, coordinates):
-        self._subsections = Tile.extract_subsection_sides(side_types)
+        self._subsections: Dict[TileSubsection, Side] = Tile.extract_subsection_sides(side_types)
         self._subsections[TileSubsection.CENTER] = Side(
             SideType.extract_type(center_type)
         )
@@ -52,12 +52,57 @@ class Tile:
             }
         self._connected_subsection_groups = self._compute_connected_subsection_groups()
 
+    def get_rotation(self):
+        ''' Returns a new Tile instance that is rotated clockwise by one subsection. '''
+        cls = self.__class__
+        new_tile = cls.__new__(cls)
+
+        # rotate sides by shifting them clockwise by one
+        new_tile._subsections = {}
+        for subsection in TileSubsection.get_side_values():
+            old_subsection = TileSubsection.at_index(TileSubsection.get_index(subsection)+1)
+            old_side = self.get_side(old_subsection)
+            new_side = Side(old_side.type, old_side.isolated)
+            new_side.placement = old_side.placement
+
+            new_tile._subsections[subsection] = new_side
+
+        new_tile._subsections[TileSubsection.CENTER] = Side(
+            self.get_center().type,
+            self.get_center().isolated
+        )
+
+        new_tile.coordinates = self.coordinates
+        new_tile.quest = None
+        new_tile.group_participation = {}
+
+        new_tile._neighbor_coordinates = self._neighbor_coordinates.copy()
+
+        # the connected subsection groups also need to be rotated
+        # this is cheaper than recomputing them
+        new_tile._connected_subsection_groups = []
+        for side_type, subsections in self._connected_subsection_groups:
+            rotated_subsections = []
+            for subsection in subsections:
+                if subsection == TileSubsection.CENTER:
+                    rotated_subsections.append(subsection)
+                else:
+                    rotated_subsections.append(TileSubsection.at_index(TileSubsection.get_index(subsection)-1))
+            new_tile._connected_subsection_groups.append((side_type, rotated_subsections))
+
+        return new_tile
+
     def __eq__(self, other):
         if isinstance(other, Tile):
-            return (
-                self._subsections == other._subsections
-                and self.coordinates == other.coordinates
-            )
+            if self.coordinates != other.coordinates:
+                return False
+
+            for subsection in TileSubsection.get_all_values():
+                side = self.get_side(subsection)
+                other_side = other.get_side(subsection)
+                if side.type != other_side.type or side.isolated != other_side.isolated:
+                    return False
+            return True
         return False
 
     def __lt__(self, other):
@@ -172,22 +217,16 @@ class Tile:
     def create_all_orientations(self, include_self=True):
         orientations = []
 
-        # collect all permutations of the sequence
-        sides = []
-        for subsection in TileSubsection.get_side_values():
-            side = self.get_side(subsection)
-            sides.append(Side(side.type, side.isolated))
+        if include_self:
+            orientations.append(self)
 
-        for i in range(len(sides)):
-            rotated_sides = sides[i:] + sides[:i]
-            if rotated_sides != sides or include_self:
-                rotated_tile = Tile(
-                    side_types=rotated_sides,
-                    center_type=self.get_center().type,
-                    coordinates=self.coordinates,
-                )
-                if rotated_tile not in orientations:
-                    orientations.append(rotated_tile)
+        rotated_tile = self
+        for i in range(len(TileSubsection.get_side_values()) - 1):
+            rotated_tile = rotated_tile.get_rotation()
+
+            if rotated_tile != self and rotated_tile not in orientations:
+                orientations.append(rotated_tile)
+
         return orientations
 
     def get_rotations(self):
