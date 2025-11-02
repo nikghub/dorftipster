@@ -126,11 +126,12 @@ class Group:
             List of subsections for the given tile that are connected to the group,
             including the origin_subsection
         """
-        if tile.get_side(origin_subsection).type not in self.COMPATIBLE_GROUP_TYPES[self.type]:
+        origin_side = tile.get_side(origin_subsection)
+        if origin_side.type not in self.COMPATIBLE_GROUP_TYPES[self.type]:
             # incompatible type at origin, therefore no connection to the group
             return []
 
-        if tile.get_side(origin_subsection).isolated:
+        if origin_side.isolated:
             # if the tile that connects to the group is isolated, only that tile is returned
             return [origin_subsection]
 
@@ -138,9 +139,12 @@ class Group:
             # we may reach all sides of the tile through the center,
             # therefore return all subsections where the side type matches the group type
             # and the side is not marked as isolated
-            return [s for s in TileSubsection.get_all_values()
-                    if tile.get_side(s).type in self.COMPATIBLE_GROUP_TYPES[self.type] and
-                       not tile.get_side(s).isolated]
+            result = []
+            for s in TileSubsection.get_all_values():
+                side = tile.get_side(s)
+                if side.type in self.COMPATIBLE_GROUP_TYPES[self.type] and not side.isolated:
+                    result.append(s)
+            return result
 
         start_idx = TileSubsection.get_index(origin_subsection)
 
@@ -166,17 +170,21 @@ class Group:
             the shared type and the corresponding subsections.
         """
         subsection_groups = []
-        if tile.get_center().type in cls.COMPATIBLE_GROUP_TYPES:
+        center_type = tile.get_center().type
+        if center_type in cls.COMPATIBLE_GROUP_TYPES:
             # we may reach all sides of the tile through the center,
             # therefore return all subsections where the side type matches the center type
             # andthe side is not marked as isolated
-            center_group = [s for s in TileSubsection.get_all_values()
-                            if tile.get_side(s).type == tile.get_center().type and
-                               not tile.get_side(s).isolated]
+            center_group = []
+
+            for s in TileSubsection.get_all_values():
+                side = tile.get_side(s)
+                if side.type == center_type and not side.isolated:
+                    center_group.append(s)
             # only add center group if at least one side is involved,
             # otherwise the group can't ever be extended
             if len(center_group) > 1:
-                subsection_groups.append((tile.get_center().type, center_group))
+                subsection_groups.append((center_type, center_group))
             remaining_subsections =\
                 [s for s in TileSubsection.get_side_values() if s not in center_group]
         else:

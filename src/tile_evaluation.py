@@ -229,11 +229,12 @@ class TileEvaluation:
                 # as we do expect that we can cross these for a possible group extension
                 local_open_tiles = dict(open_coords)
                 for s in TileSubsection.get_side_values():
+                    side_type = tile.get_side(s).type
                     if (
                         tile.get_neighbor_coords(s) in local_open_tiles
-                        and tile.get_side(s).type in self.RESTRICTED_DICT
+                        and side_type in self.RESTRICTED_DICT
                         and (
-                            tile.get_side(s).type
+                            side_type
                             not in Group.COMPATIBLE_GROUP_TYPES[gp.group.type]
                             or s != subsection
                         )
