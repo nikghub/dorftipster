@@ -927,7 +927,7 @@ def test_group_connected_subsections():
 
                                 # verify that the logic of both methods matches regarding grouping subsections
                                 typed_subsections = [
-                                    (type, subsections) for type, subsections in Group.get_connected_subsection_groups(tile)\
+                                    (type, subsections) for type, subsections in tile.get_connected_subsection_groups()\
                                         if group_connecting_subsection in subsections
                                     ]
                                 assert len(typed_subsections) == 1

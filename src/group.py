@@ -45,7 +45,7 @@ class Group:
     @classmethod
     def update_group_participation(cls, groups, played_tiles, tile):
         # extend an existing group or create a new group for all connect subsections of the tile
-        for side_type, subsections in Group.get_connected_subsection_groups(tile):
+        for side_type, subsections in tile.get_connected_subsection_groups():
             extends_existing_group = False
             for group in groups.values():
                 if Group._extend_group(group, played_tiles, tile, subsections):
@@ -118,79 +118,11 @@ class Group:
             # if the tile that connects to the group is isolated, only that tile is returned
             return [origin_subsection]
 
-        connected_subsection_groups = Group.get_connected_subsection_groups(tile)
+        connected_subsection_groups = tile.get_connected_subsection_groups()
         for group_type, connected_subsections in connected_subsection_groups:
             if group_type in compatible_types and origin_subsection in connected_subsections:
                 return connected_subsections
 
-        return []
-
-    @classmethod
-    def get_connected_subsection_groups(cls, tile) -> List[Tuple[SideType, List[TileSubsection]]]:
-        """
-        Returns all of the subsection groups for the tile. That is:
-        All subsections that are connected and have a type that is compatible with groups.
-
-        Args:
-            tile: The tile to analyze
-
-        Returns:
-            A list of pairs, where each pair consists of
-            the shared type and the corresponding subsections.
-            Note that there may be multiple groups for the same type (if they are not connected).
-        """
-        subsection_groups = []
-        center_type = tile.get_center().type
-        if center_type in Constants.COMPATIBLE_GROUP_TYPES:
-            # we may reach all sides of the tile through the center,
-            # therefore return all subsections where the side type matches the center type
-            # and the side is not marked as isolated
-            center_group = []
-
-            for s in TileSubsection.get_all_values():
-                side = tile.get_side(s)
-                if side.type == center_type and not side.isolated:
-                    center_group.append(s)
-            # only add center group if at least one side is involved,
-            # otherwise the group can't ever be extended
-            if len(center_group) > 1:
-                subsection_groups.append((center_type, center_group))
-            remaining_subsections =\
-                [s for s in TileSubsection.get_side_values() if s not in center_group]
-        else:
-            remaining_subsections = list(TileSubsection.get_side_values())
-
-        while len(remaining_subsections) > 0:
-            start_subsection = remaining_subsections[0]
-            start_idx = TileSubsection.get_index(start_subsection)
-            side_type = tile.get_side(start_subsection).type
-            if side_type not in Constants.COMPATIBLE_GROUP_TYPES:
-                del remaining_subsections[0]
-                continue
-
-            # iterate clockwise and counter clockwise
-            # to collect connected subsections of sides where the type matches
-            subsections = list(set(
-                [start_subsection] + \
-                cls._iterate_subsection_sides(tile, side_type, start_idx, start_idx+1) + \
-                cls._iterate_subsection_sides(tile, side_type, start_idx, start_idx-1)
-                ))
-            subsection_groups.append((side_type, subsections))
-
-            remaining_subsections = [s for s in remaining_subsections if s not in subsections]
-
-        return subsection_groups
-
-    @classmethod
-    def _iterate_subsection_sides(cls, tile, side_type, start_idx, curr_idx):
-        subsection = TileSubsection.at_index(curr_idx)
-        if tile.get_side(subsection).type in Constants.COMPATIBLE_GROUP_TYPES[side_type] and \
-            abs(start_idx - curr_idx) < len(TileSubsection.get_side_values()):
-            return [subsection] +\
-                   cls._iterate_subsection_sides(
-                       tile, side_type, start_idx,
-                       curr_idx + 1 if curr_idx > start_idx else curr_idx -1
-                    )
         return []
 
     @classmethod

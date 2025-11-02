@@ -5,7 +5,7 @@ from functools import lru_cache
 from src.tile_subsection import TileSubsection
 from src.side import Side
 from src.side_type import SideType
-
+from src.constants import Constants
 
 class Tile:
     _opposite_dict = {
@@ -50,6 +50,7 @@ class Tile:
                 TileSubsection.UPPER_LEFT: (coordinates[0] - 3, coordinates[1] + 2),
                 TileSubsection.CENTER: (coordinates[0], coordinates[1]),
             }
+        self._connected_subsection_groups = self._compute_connected_subsection_groups()
 
     def __eq__(self, other):
         if isinstance(other, Tile):
@@ -302,3 +303,69 @@ class Tile:
                     ).placement
                     break
         return subsection_placements
+
+    def get_connected_subsection_groups(self) -> List[Tuple[SideType, List[TileSubsection]]]:
+        return self._connected_subsection_groups
+
+    def _compute_connected_subsection_groups(self) -> List[Tuple[SideType, List[TileSubsection]]]:
+        """
+        Returns all of the subsection groups for the tile. That is:
+        All subsections that are connected and have a type that is compatible with groups.
+
+        Returns:
+            A list of pairs, where each pair consists of
+            the shared type and the corresponding subsections.
+            Note that there may be multiple groups for the same type (if they are not connected).
+        """
+        subsection_groups = []
+        center_type = self.get_center().type
+        if center_type in Constants.COMPATIBLE_GROUP_TYPES:
+            # we may reach all sides of the tile through the center,
+            # therefore return all subsections where the side type matches the center type
+            # and the side is not marked as isolated
+            center_group = []
+
+            for s in TileSubsection.get_all_values():
+                side = self.get_side(s)
+                if side.type == center_type and not side.isolated:
+                    center_group.append(s)
+            # only add center group if at least one side is involved,
+            # otherwise the group can't ever be extended
+            if len(center_group) > 1:
+                subsection_groups.append((center_type, center_group))
+            remaining_subsections =\
+                [s for s in TileSubsection.get_side_values() if s not in center_group]
+        else:
+            remaining_subsections = list(TileSubsection.get_side_values())
+
+        while len(remaining_subsections) > 0:
+            start_subsection = remaining_subsections[0]
+            start_idx = TileSubsection.get_index(start_subsection)
+            side_type = self.get_side(start_subsection).type
+            if side_type not in Constants.COMPATIBLE_GROUP_TYPES:
+                del remaining_subsections[0]
+                continue
+
+            # iterate clockwise and counter clockwise
+            # to collect connected subsections of sides where the type matches
+            subsections = list(set(
+                [start_subsection] + \
+                self._iterate_subsection_sides(side_type, start_idx, start_idx+1) + \
+                self._iterate_subsection_sides(side_type, start_idx, start_idx-1)
+                ))
+            subsection_groups.append((side_type, subsections))
+
+            remaining_subsections = [s for s in remaining_subsections if s not in subsections]
+
+        return subsection_groups
+
+    def _iterate_subsection_sides(self, side_type, start_idx, curr_idx):
+        subsection = TileSubsection.at_index(curr_idx)
+        if self.get_side(subsection).type in Constants.COMPATIBLE_GROUP_TYPES[side_type] and \
+            abs(start_idx - curr_idx) < len(TileSubsection.get_side_values()):
+            return [subsection] +\
+                   self._iterate_subsection_sides(
+                       side_type, start_idx,
+                       curr_idx + 1 if curr_idx > start_idx else curr_idx -1
+                    )
+        return []
