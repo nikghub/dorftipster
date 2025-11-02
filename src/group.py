@@ -127,7 +127,8 @@ class Group:
             including the origin_subsection
         """
         origin_side = tile.get_side(origin_subsection)
-        if origin_side.type not in self.COMPATIBLE_GROUP_TYPES[self.type]:
+        compatible_types = self.COMPATIBLE_GROUP_TYPES[self.type]
+        if origin_side.type not in compatible_types:
             # incompatible type at origin, therefore no connection to the group
             return []
 
@@ -135,14 +136,14 @@ class Group:
             # if the tile that connects to the group is isolated, only that tile is returned
             return [origin_subsection]
 
-        if tile.get_center().type in self.COMPATIBLE_GROUP_TYPES[self.type]:
+        if tile.get_center().type in compatible_types:
             # we may reach all sides of the tile through the center,
             # therefore return all subsections where the side type matches the group type
             # and the side is not marked as isolated
             result = []
-            for s in TileSubsection.get_all_values():
+            for s in TileSubsection.get_side_values():
                 side = tile.get_side(s)
-                if side.type in self.COMPATIBLE_GROUP_TYPES[self.type] and not side.isolated:
+                if side.type in compatible_types and not side.isolated:
                     result.append(s)
             return result
 
