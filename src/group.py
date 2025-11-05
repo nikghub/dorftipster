@@ -13,7 +13,7 @@ class Group:
         self.start_tile: Tile = start_tile
         self.start_tile_subsections: List[TileSubsection] = subsections
         self.type: SideType = side_type
-        self.tile_coordinates: List[Tuple[int, int]] = [start_tile.coordinates]
+        self.tile_coordinates: set[Tuple[int, int]] = {start_tile.coordinates}
         self.size: int = len(subsections)
         self.possible_extensions: Dict[Tuple[int, int] : List[TileSubsection]] = \
             {start_tile.get_neighbor_coords(s) : [Tile.get_opposing(s)]\
@@ -87,7 +87,7 @@ class Group:
 
     def compute(self, played_tiles):
         # reset as we are recomputing
-        self.tile_coordinates = []
+        self.tile_coordinates.clear()
         self.possible_extensions = {}
         self.size = 0
 
@@ -159,7 +159,7 @@ class Group:
         tile_group_size_contribution = 0
 
         if tile.coordinates not in self.tile_coordinates:
-            self.tile_coordinates.append(tile.coordinates)
+            self.tile_coordinates.add(tile.coordinates)
             # recompute tile group participation: keep track of subsections of the tile
             # that have been seen already to avoid infinite recursion
             tile.group_participation[self.id] = Tile.GroupParticipation(self, subsections=[])

@@ -796,7 +796,7 @@ def test_group_type_compatibility():
         assert group.type == expected_type
         assert group.size == expected_size
         assert len(group.tile_coordinates) == len(expected_coordinates)
-        assert group.tile_coordinates == expected_coordinates
+        assert sorted(list(group.tile_coordinates)) == sorted(expected_coordinates)
 
     session = Session()
     for first_tile_type in SideType.get_values():
