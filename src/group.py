@@ -6,6 +6,8 @@ from src.tile_subsection import TileSubsection
 from src.tile import Tile
 from src.constants import Constants
 
+from functools import lru_cache
+
 class Group:
 
     def __init__(self, start_tile: Tile, side_type: SideType,
@@ -39,6 +41,7 @@ class Group:
         return self.start_tile.coordinates < other.start_tile.coordinates
 
     @classmethod
+    @lru_cache(maxsize=20)
     def is_type_restricted(cls, side_type):
         return side_type in [SideType.RIVER, SideType.PONDS, SideType.TRAIN, SideType.STATION]
 
