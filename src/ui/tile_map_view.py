@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QApplication
 from PySide6.QtCore import Qt, Slot, Signal, QPointF, QEvent
 from PySide6.QtGui import QPainter, QKeySequence, QBrush, QMouseEvent, QKeyEvent
 
-from src.constants import UIConstants
+from src.ui.constants import UIConstants
 from src.tile_subsection import TileSubsection
 from src.tile import Tile
 
@@ -207,8 +207,12 @@ class TileMapView(QGraphicsView):
             self.centerOn(
                 to_scene_coordinates(self.selected_candidate.tile.coordinates)
             )
+            self.coordinates_selected.emit(
+                self.selected_candidate.tile.coordinates
+            )
         elif self.selected_open_coords is not None:
             self.centerOn(to_scene_coordinates(self.selected_open_coords))
+            self.coordinates_selected.emit(self.selected_open_coords)
 
     def remove_items_at_coordinates(self, coordinates):
         scene_coords = to_scene_coordinates(coordinates)
@@ -273,7 +277,7 @@ class TileMapView(QGraphicsView):
             if (
                 self.selected_candidate is not None
                 and tile.coordinates
-                in self.selected_candidate.tile.neighbor_coordinates.values()
+                in self.selected_candidate.tile.get_neighbor_coords_values()
             ):
                 self.draw_tile(tile, elevate=True)
             else:
@@ -282,7 +286,7 @@ class TileMapView(QGraphicsView):
             if (
                 self.selected_candidate is not None
                 and tile.coordinates
-                in self.selected_candidate.tile.neighbor_coordinates.values()
+                in self.selected_candidate.tile.get_neighbor_coords_values()
             ):
                 self.draw_placement_rated_tile(tile, self.selected_candidate)
             else:
@@ -320,35 +324,35 @@ class TileMapView(QGraphicsView):
             self.open_coordinates_auto_toggled = False
 
     def update_items(self, old_coords=None, new_coords=None, consider_neighbors=True):
-        def get_neighbor_coordinates(coords):
+        def get_neighbor_coords(coords):
             if coords is not None:
                 # the neighbor_coordinates also contain the coordinate of the center itself
                 if coords in self.played_tiles:
-                    return self.played_tiles[coords].neighbor_coordinates
+                    return self.played_tiles[coords].get_neighbor_coords_values()
                 elif (
                     self.selected_candidate is not None
                     and coords == self.selected_candidate.tile.coordinates
                 ):
-                    return self.selected_candidate.tile.neighbor_coordinates
+                    return self.selected_candidate.tile.get_neighbor_coords_values()
                 elif coords in self.best_candidates:
                     candidate_idx, candidate = self.best_candidates[coords]
-                    return candidate.tile.neighbor_coordinates
+                    return candidate.tile.get_neighbor_coords_values()
                 else:
-                    return {
-                        subsection: Tile.get_coordinates(coords, subsection)
+                    return [
+                        Tile.get_coordinates(coords, subsection)
                         for subsection in TileSubsection.get_all_values()
-                    }
+                    ]
             return {}
 
         # collect the coordinates to refresh
         if consider_neighbors:
             refresh_coordinates = {
-                coords: None for coords in get_neighbor_coordinates(old_coords).values()
+                coords: None for coords in get_neighbor_coords(old_coords)
             }
             refresh_coordinates.update(
                 {
                     coords: None
-                    for coords in get_neighbor_coordinates(new_coords).values()
+                    for coords in get_neighbor_coords(new_coords)
                 }
             )
         else:
@@ -668,7 +672,7 @@ class CandidateNeighborMapView(TileMapView):
         for tile in self.played_tiles.values():
             if (
                 tile.coordinates
-                in self.selected_candidate.tile.neighbor_coordinates.values()
+                in self.selected_candidate.tile.get_neighbor_coords_values()
             ):
                 self.draw_placement_rated_tile(tile, self.selected_candidate)
 

@@ -1,10 +1,11 @@
 from enum import Enum
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
+from functools import lru_cache
 
 from src.tile_subsection import TileSubsection
 from src.side import Side
 from src.side_type import SideType
-
+from src.constants import Constants
 
 class Tile:
     _opposite_dict = {
@@ -29,8 +30,8 @@ class Tile:
             self.subsections: List[TileSubsection] = subsections
 
     def __init__(self, side_types, center_type, coordinates):
-        self.subsections = Tile.extract_subsection_sides(side_types)
-        self.subsections[TileSubsection.CENTER] = Side(
+        self._subsections: Dict[TileSubsection, Side] = Tile.extract_subsection_sides(side_types)
+        self._subsections[TileSubsection.CENTER] = Side(
             SideType.extract_type(center_type)
         )
 
@@ -38,9 +39,9 @@ class Tile:
         self.quest = None
         self.group_participation: Dict[str, Tile.GroupParticipation] = {}
         # store locally as optimization
-        self.neighbor_coordinates = {}
+        self._neighbor_coordinates = {}
         if self.coordinates is not None:
-            self.neighbor_coordinates = {
+            self._neighbor_coordinates = {
                 TileSubsection.TOP: (coordinates[0], coordinates[1] + 4),
                 TileSubsection.UPPER_RIGHT: (coordinates[0] + 3, coordinates[1] + 2),
                 TileSubsection.LOWER_RIGHT: (coordinates[0] + 3, coordinates[1] - 2),
@@ -49,13 +50,59 @@ class Tile:
                 TileSubsection.UPPER_LEFT: (coordinates[0] - 3, coordinates[1] + 2),
                 TileSubsection.CENTER: (coordinates[0], coordinates[1]),
             }
+        self._connected_subsection_groups = self._compute_connected_subsection_groups()
+
+    def get_rotation(self):
+        ''' Returns a new Tile instance that is rotated clockwise by one subsection. '''
+        cls = self.__class__
+        new_tile = cls.__new__(cls)
+
+        # rotate sides by shifting them clockwise by one
+        new_tile._subsections = {}
+        for subsection in TileSubsection.get_side_values():
+            old_subsection = TileSubsection.at_index(TileSubsection.get_index(subsection)+1)
+            old_side = self.get_side(old_subsection)
+            new_side = Side(old_side.type, old_side.isolated)
+            new_side.placement = old_side.placement
+
+            new_tile._subsections[subsection] = new_side
+
+        new_tile._subsections[TileSubsection.CENTER] = Side(
+            self.get_center().type,
+            self.get_center().isolated
+        )
+
+        new_tile.coordinates = self.coordinates
+        new_tile.quest = None
+        new_tile.group_participation = {}
+
+        new_tile._neighbor_coordinates = self._neighbor_coordinates.copy()
+
+        # the connected subsection groups also need to be rotated
+        # this is cheaper than recomputing them
+        new_tile._connected_subsection_groups = []
+        for side_type, subsections in self._connected_subsection_groups:
+            rotated_subsections = []
+            for subsection in subsections:
+                if subsection == TileSubsection.CENTER:
+                    rotated_subsections.append(subsection)
+                else:
+                    rotated_subsections.append(TileSubsection.at_index(TileSubsection.get_index(subsection)-1))
+            new_tile._connected_subsection_groups.append((side_type, rotated_subsections))
+
+        return new_tile
 
     def __eq__(self, other):
         if isinstance(other, Tile):
-            return (
-                self.subsections == other.subsections
-                and self.coordinates == other.coordinates
-            )
+            if self.coordinates != other.coordinates:
+                return False
+
+            for subsection in TileSubsection.get_all_values():
+                side = self.get_side(subsection)
+                other_side = other.get_side(subsection)
+                if side.type != other_side.type or side.isolated != other_side.isolated:
+                    return False
+            return True
         return False
 
     def __lt__(self, other):
@@ -154,33 +201,32 @@ class Tile:
 
         return True
 
-    def get_sides(self):
-        return {
-            subsection: side
-            for subsection, side in self.subsections.items()
-            if subsection != TileSubsection.CENTER
-        }
+    def get_center(self) -> Side:
+        return self._subsections[TileSubsection.CENTER]
 
-    def get_center(self):
-        return self.subsections[TileSubsection.CENTER]
+    def get_side(self, subsection: TileSubsection) -> Side:
+        return self._subsections[subsection]
+
+    def get_neighbor_coords(self, subsection):
+        return self._neighbor_coordinates[subsection]
+
+    def get_neighbor_coords_values(self):
+        # return an immutable sequence of neighbor coordinate tuples
+        return tuple(self._neighbor_coordinates.values())
 
     def create_all_orientations(self, include_self=True):
         orientations = []
 
-        # collect all permutations of the sequence
-        sides = [
-            Side(side.type, side.isolated) for side in self.get_sides().values()
-        ]  # ignore placement
-        for i in range(len(sides)):
-            rotated_sides = sides[i:] + sides[:i]
-            if rotated_sides != sides or include_self:
-                rotated_tile = Tile(
-                    side_types=rotated_sides,
-                    center_type=self.subsections[TileSubsection.CENTER].type,
-                    coordinates=self.coordinates,
-                )
-                if rotated_tile not in orientations:
-                    orientations.append(rotated_tile)
+        if include_self:
+            orientations.append(self)
+
+        rotated_tile = self
+        for i in range(len(TileSubsection.get_side_values()) - 1):
+            rotated_tile = rotated_tile.get_rotation()
+
+            if rotated_tile != self and rotated_tile not in orientations:
+                orientations.append(rotated_tile)
+
         return orientations
 
     def get_rotations(self):
@@ -188,7 +234,8 @@ class Tile:
 
     def get_side_type_seq(self):
         seq = ""
-        for side in self.get_sides().values():
+        for subsection in TileSubsection.get_side_values():
+            side = self.get_side(subsection)
             if side.isolated:
                 seq += "(" + side.type.to_character() + ")"
             else:
@@ -208,8 +255,9 @@ class Tile:
 
     def get_num_perfectly_closed(self, played_tiles):
         num_perfectly_closed = 0
-        for subsection, side in self.get_sides().items():
-            neighbor_coords = self.neighbor_coordinates[subsection]
+        for subsection in TileSubsection.get_side_values():
+            side = self.get_side(subsection)
+            neighbor_coords = self.get_neighbor_coords(subsection)
             if neighbor_coords not in played_tiles:
                 continue
             neigbor_tile = played_tiles[neighbor_coords]
@@ -226,6 +274,7 @@ class Tile:
         return num_perfectly_closed
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_coordinates(cls, base_coordinates, subsection):
         x, y = base_coordinates
         if subsection == TileSubsection.TOP:
@@ -244,16 +293,14 @@ class Tile:
         return (x, y)
 
     @classmethod
-    def get_opposite_dict(cls):
-        return cls._opposite_dict
-
-    @classmethod
-    def get_opposing(cls, subsection):
-        if subsection in cls._opposite_dict:
+    @lru_cache(maxsize=None)
+    def get_opposing(cls, subsection: TileSubsection) -> Optional[TileSubsection]:
+        if subsection.value in cls._opposite_dict:
             return cls._opposite_dict[subsection]
         return None
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_direct_neighbors(cls, subsection):
         if subsection == TileSubsection.CENTER:
             return []
@@ -284,14 +331,80 @@ class Tile:
 
     def _get_subsection_placements(self, neighbor_tile=None):
         subsection_placements = {
-            subsection: side.placement for subsection, side in self.get_sides().items()
+            sub: self.get_side(sub).placement for sub in TileSubsection.get_side_values()
         }
         if neighbor_tile is not None:
             for subsection in TileSubsection.get_side_values():
                 # update with the placement of the candidate tile
-                if self.neighbor_coordinates[subsection] == neighbor_tile.coordinates:
-                    subsection_placements[subsection] = neighbor_tile.subsections[
+                if self.get_neighbor_coords(subsection) == neighbor_tile.coordinates:
+                    subsection_placements[subsection] = neighbor_tile.get_side(
                         Tile.get_opposing(subsection)
-                    ].placement
+                    ).placement
                     break
         return subsection_placements
+
+    def get_connected_subsection_groups(self) -> List[Tuple[SideType, List[TileSubsection]]]:
+        return self._connected_subsection_groups
+
+    def _compute_connected_subsection_groups(self) -> List[Tuple[SideType, List[TileSubsection]]]:
+        """
+        Returns all of the subsection groups for the tile. That is:
+        All subsections that are connected and have a type that is compatible with groups.
+
+        Returns:
+            A list of pairs, where each pair consists of
+            the shared type and the corresponding subsections.
+            Note that there may be multiple groups for the same type (if they are not connected).
+        """
+        subsection_groups = []
+        center_type = self.get_center().type
+        if center_type in Constants.COMPATIBLE_GROUP_TYPES:
+            # we may reach all sides of the tile through the center,
+            # therefore return all subsections where the side type matches the center type
+            # and the side is not marked as isolated
+            center_group = []
+
+            for s in TileSubsection.get_all_values():
+                side = self.get_side(s)
+                if side.type == center_type and not side.isolated:
+                    center_group.append(s)
+            # only add center group if at least one side is involved,
+            # otherwise the group can't ever be extended
+            if len(center_group) > 1:
+                subsection_groups.append((center_type, center_group))
+            remaining_subsections =\
+                [s for s in TileSubsection.get_side_values() if s not in center_group]
+        else:
+            remaining_subsections = list(TileSubsection.get_side_values())
+
+        while len(remaining_subsections) > 0:
+            start_subsection = remaining_subsections[0]
+            start_idx = TileSubsection.get_index(start_subsection)
+            side_type = self.get_side(start_subsection).type
+            if side_type not in Constants.COMPATIBLE_GROUP_TYPES:
+                del remaining_subsections[0]
+                continue
+
+            # iterate clockwise and counter clockwise
+            # to collect connected subsections of sides where the type matches
+            subsections = list(set(
+                [start_subsection] + \
+                self._iterate_subsection_sides(side_type, start_idx, start_idx+1) + \
+                self._iterate_subsection_sides(side_type, start_idx, start_idx-1)
+                ))
+            subsection_groups.append((side_type, subsections))
+
+            remaining_subsections = [s for s in remaining_subsections if s not in subsections]
+
+        return subsection_groups
+
+    def _iterate_subsection_sides(self, side_type, start_idx, curr_idx):
+        subsection = TileSubsection.at_index(curr_idx)
+        if self.get_side(subsection).type in Constants.COMPATIBLE_GROUP_TYPES[side_type] and \
+            abs(start_idx - curr_idx) < len(TileSubsection.get_side_values()):
+            return [subsection] +\
+                   self._iterate_subsection_sides(
+                       side_type, start_idx,
+                       curr_idx + 1 if curr_idx > start_idx else curr_idx -1
+                    )
+        return []

@@ -1,30 +1,31 @@
-from enum import Enum
+from enum import IntEnum
+from functools import lru_cache
 
-class TileSubsection(Enum):
-    TOP = 'TOP'
-    UPPER_RIGHT = 'UR'
-    LOWER_RIGHT = 'LR'
-    BOTTOM = 'BOT'
-    LOWER_LEFT = 'LL'
-    UPPER_LEFT = 'UL'
-
-    CENTER = 'CENTER'
-
-    def __lt__(self, other):
-        return self.value < other.value
+class TileSubsection(IntEnum):
+    TOP = 0
+    UPPER_RIGHT = 1
+    LOWER_RIGHT = 2
+    BOTTOM = 3
+    LOWER_LEFT = 4
+    UPPER_LEFT = 5
+    CENTER = 6
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_all_values(cls):
-        return list(cls.__members__.values())
+        return tuple(cls)
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_side_values(cls):
-        return cls.get_all_values()[:-1]
+        return tuple(v for v in cls if v != cls.CENTER)
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_index(cls, subsection):
-        return list(cls.__members__).index(subsection.name)
+        return subsection.value
 
     @classmethod
+    @lru_cache(maxsize=None)
     def at_index(cls, index):
-        return cls.get_side_values()[index % len(cls.get_side_values())]
+        return cls(index % len(cls.get_side_values()))

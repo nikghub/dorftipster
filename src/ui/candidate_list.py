@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QTableWidgetItem, QVBoxLayout
 from PySide6.QtCore import Qt, Slot, Signal
 
 from src.side import Side
-from src.constants import UIConstants
+from src.ui.constants import UIConstants
 
 from src.ui.candidate_table_widget import CandidateTableWidget, NumericTableWidgetItem
 

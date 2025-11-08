@@ -1,6 +1,6 @@
 import random
 
-from src.side_type import SideType
+from src.side_type import SideType, SIDE_TYPE_TO_CHAR
 
 def isolate_at_index(sequence, index):
     if index >= 0 and index < len(sequence):
@@ -13,7 +13,7 @@ def isolate_at_index(sequence, index):
     return sequence
 
 def get_sequence(side_types, isolate_at_idx=-1):
-    return isolate_at_index("".join([type.value for type in side_types]), isolate_at_idx)
+    return isolate_at_index("".join([SIDE_TYPE_TO_CHAR[type] for type in side_types]), isolate_at_idx)
 
 def get_example_side_sequence(num):
     all_types = SideType.all_types()

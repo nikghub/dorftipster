@@ -7,6 +7,7 @@ from src.side_type import SideType
 from src.tile_subsection import TileSubsection
 from src.tile import Tile
 from src.group import Group
+from src.constants import Constants
 
 
 class TileEvaluation:
@@ -123,8 +124,8 @@ class TileEvaluation:
     }
 
     # please note that the distance to reach any side of a direct neighbor is considered 0
-    _PERSPECTIVE_GROUPS_MAX_DISTANCE_RESTRICTED_TYPES = 6
-    _PERSPECTIVE_GROUPS_MAX_DISTANCE_NON_RESTRICTED_TYPES = 3
+    _PERSPECTIVE_GROUPS_MAX_DISTANCE_RESTRICTED_TYPES = 5
+    _PERSPECTIVE_GROUPS_MAX_DISTANCE_NON_RESTRICTED_TYPES = 2
 
     _GROUP_SIZE_RATING_RESTRICTED_BOOST_FACTOR = 2.25
 
@@ -213,7 +214,7 @@ class TileEvaluation:
                 if subsection == TileSubsection.CENTER:
                     continue
 
-                neighbor_coordinates = tile.neighbor_coordinates[subsection]
+                neighbor_coordinates = tile.get_neighbor_coords(subsection)
                 # look at extensions for the group that are open from the candidate tile
                 if neighbor_coordinates not in open_coords:
                     continue
@@ -225,20 +226,27 @@ class TileEvaluation:
                         self._PERSPECTIVE_GROUPS_MAX_DISTANCE_NON_RESTRICTED_TYPES
                     )
 
-                # remove open tiles that are adjacent to a hardly restricted subsection type
-                # as we do expect that we can cross these for a possible group extension
+                # possibly remove open tiles to hop onto
                 local_open_tiles = dict(open_coords)
                 for s in TileSubsection.get_side_values():
-                    if (
-                        tile.neighbor_coordinates[s] in local_open_tiles
-                        and tile.subsections[s].type in self.RESTRICTED_DICT
-                        and (
-                            tile.subsections[s].type
-                            not in Group.COMPATIBLE_GROUP_TYPES[gp.group.type]
-                            or s != subsection
-                        )
-                    ):
-                        del local_open_tiles[tile.neighbor_coordinates[s]]
+                    side_type = tile.get_side(s).type
+                    coords = tile.get_neighbor_coords(s)
+                    if coords not in local_open_tiles:
+                        continue
+                    if side_type not in self.RESTRICTED_DICT:
+                        continue
+
+                    # remove open tiles
+                    # * that are incompatible directions (due to restricted types) for the given group
+                    if side_type not in Constants.COMPATIBLE_GROUP_TYPES[gp.group.type]:
+                        del local_open_tiles[coords]
+
+                    # remove open tiles
+                    # that are also of a restricted, compatible type
+                    # as we expect to be able to connect to these compatible types,
+                    # before we will reach a further away compatible type
+                    elif s != subsection:
+                        del local_open_tiles[coords]
 
                 for distant_group_id, paths in self.get_distant_groups(
                     local_open_tiles,
@@ -267,7 +275,7 @@ class TileEvaluation:
                         ):
                             considered_distant_groups[distant_group_id] = (
                                 dist,
-                                tile.subsections[subsection].type,
+                                tile.get_side(subsection).type,
                                 1,
                             )
                         # track if we are able to connect to the same group
@@ -275,7 +283,7 @@ class TileEvaluation:
                         elif dist == considered_distant_groups[distant_group_id][0]:
                             considered_distant_groups[distant_group_id] = (
                                 dist,
-                                tile.subsections[subsection].type,
+                                tile.get_side(subsection).type,
                                 considered_distant_groups[distant_group_id][2] + 1,
                             )
 
@@ -373,7 +381,7 @@ class TileEvaluation:
     def _skip_path_to_group(self, origin_group, distant_group, dist, path_coords):
         # distant groups of a different type will only be collected if they are direct neighbors
         if (
-            distant_group.type not in Group.COMPATIBLE_GROUP_TYPES[origin_group.type]
+            distant_group.type not in Constants.COMPATIBLE_GROUP_TYPES[origin_group.type]
             and dist > 0
         ):
             return True
@@ -398,7 +406,7 @@ class TileEvaluation:
                 is_last_coord = i == len(path_coords) - 1
                 if (
                     crossing_group_type
-                    not in Group.COMPATIBLE_GROUP_TYPES[origin_group.type]
+                    not in Constants.COMPATIBLE_GROUP_TYPES[origin_group.type]
                     or not is_last_coord
                 ) and dist > 0:
                     return True
@@ -445,7 +453,7 @@ class TileEvaluation:
             return 0
 
         rating.neighbor_compatibility_score = 0
-        for subsection in rating.tile.subsections.keys():
+        for subsection in TileSubsection.get_all_values():
             if subsection not in rating.open_neighbor_side_types:
                 # neighbor tile is not open
                 continue
@@ -472,7 +480,7 @@ class TileEvaluation:
             # as tiles for these groups are less frequent
             if Group.is_type_restricted(gp.group.type):
                 # side type of the tile with which we extend the group
-                extension_type = rating.tile.subsections[gp.subsections[0]].type
+                extension_type = rating.tile.get_side(gp.subsections[0]).type
                 factor = self._GROUP_SIZE_BOOST_FACTOR[gp.group.type][extension_type]
 
             if gp.group.id in self.groups:
@@ -503,11 +511,11 @@ class TileEvaluation:
 
                 # types that may be equivalent to green regarding placement should be ignored
                 if SideType.is_equivalent_to_green(
-                    rating.tile.subsections[subsection].type
+                    rating.tile.get_side(subsection).type
                 ):
                     continue
 
-                neighbor_coordinates = rating.tile.neighbor_coordinates[subsection]
+                neighbor_coordinates = rating.tile.get_neighbor_coords(subsection)
                 # look at extensions for the group that are open from the candidate tile
                 if any(
                     neighbor_coordinates in container
@@ -541,7 +549,7 @@ class TileEvaluation:
                 distant_group = self.groups[distant_group_id]
                 factor = 1.0
 
-                if distant_group.type in Group.COMPATIBLE_GROUP_TYPES[extension_type]:
+                if distant_group.type in Constants.COMPATIBLE_GROUP_TYPES[extension_type]:
                     # boost restricted type extension
                     if Group.is_type_restricted(distant_group.type):
                         factor = self._GROUP_SIZE_BOOST_FACTOR[distant_group.type][
@@ -633,9 +641,11 @@ class TileEvaluation:
 
     def _compute_tile_placement_rating(self, rating):
         rating.tile_placement_rating = 0
-        for subsection, side in rating.tile.get_sides().items():
-            neighbor_coords = rating.tile.neighbor_coordinates[subsection]
+        for subsection in TileSubsection.get_side_values():
+            neighbor_coords = rating.tile.get_neighbor_coords(subsection)
             tile_placement = Tile.Placement.UNKNOWN
+
+            side = rating.tile.get_side(subsection)
             if neighbor_coords in self.played_tiles:
                 neigbor_tile = self.played_tiles[neighbor_coords]
                 if side.placement == Side.Placement.IMPERFECT_MATCH:
@@ -685,7 +695,7 @@ class TileEvaluation:
 
     def _compute_neighbor_type_demotion_rating(self, rating):
         rating.neighbor_type_demotion_rating = 0
-        for subsection, side in rating.tile.subsections.items():
+        for subsection in TileSubsection.get_all_values():
             if subsection not in rating.open_neighbor_side_types:
                 continue
 
@@ -718,6 +728,8 @@ class TileEvaluation:
 
             if len(different_types) == 0:
                 continue
+
+            side = rating.tile.get_side(subsection)
 
             # there are no tiles with more than 4 different types
             # therefore apply a demotion if the candidate tile would add a new type,
@@ -903,7 +915,7 @@ class TileEvaluation:
                 TileSubsection, Dict[TileSubsection, SideType]
             ] = {}
             for subsection in TileSubsection.get_side_values():
-                neighbor_coordinate = self.tile.neighbor_coordinates[subsection]
+                neighbor_coordinate = self.tile.get_neighbor_coords(subsection)
                 if neighbor_coordinate in played_tiles:
                     # neighbor tile is not open
                     continue
@@ -922,13 +934,13 @@ class TileEvaluation:
                     if opposing_tile_coordinate in played_tiles:
                         opposing_tile_side_type = (
                             played_tiles[opposing_tile_coordinate]
-                            .subsections[opposing_subsection]
+                            .get_side(opposing_subsection)
                             .type
                         )
                     elif opposing_tile_coordinate == self.tile.coordinates:
-                        opposing_tile_side_type = self.tile.subsections[
+                        opposing_tile_side_type = self.tile.get_side(
                             opposing_subsection
-                        ].type
+                        ).type
 
                     open_neighbor_side_types[subsection][
                         neighbor_subsection

@@ -2,7 +2,7 @@ import pytest
 
 from src.tile import Tile
 from src.side import Side
-from src.side_type import SideType
+from src.side_type import SideType, SIDE_TYPE_TO_CHAR
 from src.tile_subsection import TileSubsection
 from src.session import Session
 
@@ -57,8 +57,8 @@ def test_extract_subsection_sides_isolation():
 
 def test_extract_subsection_sides_isolation_single_char():
     single_char_type = SideType.CROPS
-    single_char_sides = Tile.extract_subsection_sides(f"{single_char_type.value}")
-    single_char_isolated_sides = Tile.extract_subsection_sides(f"({single_char_type.value})")
+    single_char_sides = Tile.extract_subsection_sides(f"{SIDE_TYPE_TO_CHAR[single_char_type]}")
+    single_char_isolated_sides = Tile.extract_subsection_sides(f"({SIDE_TYPE_TO_CHAR[single_char_type]})")
     assert list(single_char_sides.values()) == [Side(single_char_type, False)] * 6
     # isolation should be ignored for single type shortcut
     assert single_char_sides == single_char_isolated_sides
@@ -81,10 +81,20 @@ def test_extract_subsection_sides_invalid_input():
     with pytest.raises(ValueError):
         Tile.extract_subsection_sides([0, "h", "g", 1, 2, 3])
 
+def test_extract_subsection_sides_from_side_objects():
+    side_objects = [Side(SideType.WOODS, False),
+                    Side(SideType.HOUSE, True),
+                    Side(SideType.CROPS, False),
+                    Side(SideType.GREEN, False),
+                    Side(SideType.PONDS, True),
+                    Side(SideType.TRAIN, False)]
+    extracted_sides = Tile.extract_subsection_sides(side_objects)
+    assert list(extracted_sides.values()) == side_objects
+
 def test_is_valid_side_sequence():
     for type in SideType.all_types():
-        assert Tile.is_valid_side_sequence(type.value)
-        assert Tile.is_valid_side_sequence(type.value*6)
+        assert Tile.is_valid_side_sequence(SIDE_TYPE_TO_CHAR[type])
+        assert Tile.is_valid_side_sequence(SIDE_TYPE_TO_CHAR[type]*6)
 
     for i in range(1, 10):
         if i == 1 or i == 6:
@@ -100,8 +110,8 @@ def test_is_valid_side_sequence():
     assert not Tile.is_valid_side_sequence("abcdef")
 
     # single type in isolating brackets should be ignored
-    assert Tile.is_valid_side_sequence(f"{SideType.CROPS.value}")
-    assert Tile.is_valid_side_sequence(f"({SideType.CROPS.value})")
+    assert Tile.is_valid_side_sequence(f"{SIDE_TYPE_TO_CHAR[SideType.CROPS]}")
+    assert Tile.is_valid_side_sequence(f"({SIDE_TYPE_TO_CHAR[SideType.CROPS]})")
 
     # use of isolating brackets
     example_sequence = get_example_side_sequence(6)
@@ -137,7 +147,7 @@ def test_tile_rotation():
         rotated_tiles = tile.get_rotations()
         assert len(rotated_tiles) == len(expected_rotated_sequences)
 
-        actual_rotated_sequences =[[side.type for side in rotated_tile.get_sides().values()] for rotated_tile in rotated_tiles]
+        actual_rotated_sequences =[[rotated_tile.get_side(s).type for s in TileSubsection.get_side_values()] for rotated_tile in rotated_tiles]
         assert sequence not in actual_rotated_sequences
 
         for i in range(len(expected_rotated_sequences)):
@@ -267,3 +277,36 @@ def test_get_side_type_seq():
         isolated_sequence = example_sequence[:i] + "(" + example_sequence[i] + ")" + example_sequence[i+1:]
         tile = Tile(side_types=isolated_sequence, center_type=SideType.GREEN, coordinates=None)
         assert tile.get_side_type_seq() == isolated_sequence
+
+def test_get_neighbor_coords():
+    tile = Tile(side_types=[SideType.WOODS]*6, center_type=SideType.WOODS, coordinates=(0,0))
+    expected_neighbor_coords = {
+        TileSubsection.TOP: (0,4),
+        TileSubsection.UPPER_RIGHT: (3,2),
+        TileSubsection.LOWER_RIGHT: (3,-2),
+        TileSubsection.BOTTOM: (0,-4),
+        TileSubsection.LOWER_LEFT: (-3,-2),
+        TileSubsection.UPPER_LEFT: (-3,2)
+    }
+
+    for subsection in TileSubsection.get_side_values():
+        actual_coords = tile.get_neighbor_coords(subsection)
+        assert actual_coords == expected_neighbor_coords[subsection]
+
+def test_get_all_neighbor_coords_values():
+    tile = Tile(side_types=[SideType.WOODS]*6, center_type=SideType.WOODS, coordinates=(0,0))
+
+    exptected_neighbor_coords_values = (
+        (0,4),
+        (3,2),
+        (3,-2),
+        (0,-4),
+        (-3,-2),
+        (-3,2),
+        (0,0)
+    )
+
+    expected_neighbor_coords = dict(zip(TileSubsection.get_all_values(), list(exptected_neighbor_coords_values)))
+
+    actual_neighbor_coords = tile.get_neighbor_coords_values()
+    assert actual_neighbor_coords == exptected_neighbor_coords_values

@@ -2,6 +2,7 @@ from typing import List
 
 from src.tile import Tile
 from src.tile_evaluation import TileEvaluation
+from src.tile_subsection import TileSubsection
 from src.side_type import SideType
 
 class TreeNode:
@@ -27,7 +28,8 @@ class Tree:
     def add_tile(self, tile: Tile):
         for orientation in tile.create_all_orientations():
             current_node = self.root
-            for side in orientation.get_sides().values():
+            for s in TileSubsection.get_side_values():
+                side = orientation.get_side(s)
                 if side.type not in current_node.children:
                     current_node.children[side.type] = TreeNode()
                 current_node = current_node.children[side.type]
@@ -39,7 +41,8 @@ class Tree:
             current_node = self.root
             path = []
 
-            for side in orientation.get_sides().values():
+            for s in TileSubsection.get_side_values():
+                side = orientation.get_side(s)
                 if side.type not in current_node.children:
                     return
                 child = current_node.children[side.type]

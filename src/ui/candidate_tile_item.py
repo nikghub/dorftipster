@@ -1,6 +1,6 @@
 from PySide6.QtCore import QPointF
 
-from src.constants import UIConstants
+from src.ui.constants import UIConstants
 
 from src.ui.tile_item import TileItem
 

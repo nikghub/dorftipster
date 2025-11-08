@@ -23,9 +23,10 @@ from PySide6.QtGui import QAction, QFont
 from PySide6.QtCore import Qt, Slot, Signal
 
 from src.session import Session
-from src.side_type import SideType
+from src.side_type import SideType, SIDE_TYPE_TO_CHAR
 from src.tile import Tile
-from src.constants import DatabaseConstants, UIConstants
+from src.constants import DatabaseConstants
+from src.ui.constants import UIConstants
 
 from src.ui.tile_map_view import CandidateNeighborMapView, TileMapView
 from src.ui.control_panel import ControlPanel
@@ -341,12 +342,12 @@ class MainWidget(QMainWindow):
     def show_help(self):
         example_seq = "".join(
             [
-                SideType.WOODS.value,
-                SideType.HOUSE.value,
-                SideType.WOODS.value,
-                SideType.CROPS.value,
-                SideType.WOODS.value,
-                SideType.GREEN.value,
+                SIDE_TYPE_TO_CHAR[SideType.WOODS],
+                SIDE_TYPE_TO_CHAR[SideType.HOUSE],
+                SIDE_TYPE_TO_CHAR[SideType.WOODS],
+                SIDE_TYPE_TO_CHAR[SideType.CROPS],
+                SIDE_TYPE_TO_CHAR[SideType.WOODS],
+                SIDE_TYPE_TO_CHAR[SideType.GREEN],
             ]
         )
         example_isolated_seq = (

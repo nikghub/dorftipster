@@ -6,6 +6,7 @@ from src.tile import Tile
 from src.session import Session
 from src.group import Group
 from src.tile_evaluation import TileEvaluation
+from src.constants import Constants
 
 from tests.utils import get_sequence
 
@@ -36,7 +37,7 @@ def test_init():
     tile = Tile([SideType.CROPS, SideType.CROPS, SideType.WOODS, SideType.WOODS, SideType.GREEN, SideType.GREEN],
                 SideType.CROPS, (0,0))
     group_type = SideType.CROPS
-    subsections = [subsection for subsection, side in tile.subsections.items() if side.type == group_type]
+    subsections = [sub for sub in TileSubsection.get_all_values() if tile.get_side(sub).type == group_type]
     group = Group(tile, group_type, subsections)
 
     assert group.start_tile.coordinates == tile.coordinates
@@ -154,7 +155,7 @@ def test_group_connecting_tile():
     # at coordinate (9, -2) we expect to be able to connect to the group at two tile subsections
     connecting_coordinate = (9, -2)
     assert connecting_coordinate in group.possible_extensions
-    assert sorted([TileSubsection.LOWER_LEFT, TileSubsection.LOWER_RIGHT]) == group.possible_extensions[connecting_coordinate]
+    assert sorted([TileSubsection.LOWER_LEFT, TileSubsection.LOWER_RIGHT]) == sorted(group.possible_extensions[connecting_coordinate])
 
     candidate_tile_group_participation_expectations = [
         (session.prepare_candidate([SideType.GREEN, SideType.GREEN, SideType.GREEN, SideType.GREEN, SideType.GREEN, SideType.GREEN],
@@ -795,14 +796,14 @@ def test_group_type_compatibility():
         assert group.type == expected_type
         assert group.size == expected_size
         assert len(group.tile_coordinates) == len(expected_coordinates)
-        assert group.tile_coordinates == expected_coordinates
+        assert sorted(list(group.tile_coordinates)) == sorted(expected_coordinates)
 
     session = Session()
     for first_tile_type in SideType.get_values():
         first_coord = (0,0)
         session.place_candidate(session.prepare_candidate([first_tile_type], first_tile_type, first_coord))
 
-        if first_tile_type in Group.ALLOWED_GROUP_TYPES:
+        if first_tile_type in Constants.ALLOWED_GROUP_TYPES:
             # new group
             assert_group_at_index(groups=session.groups, index=0,
                                   expected_size=7, expected_coordinates=[first_coord], expected_type=first_tile_type)
@@ -823,13 +824,13 @@ def test_group_type_compatibility():
 
             session.place_candidate(candidate)
 
-            if first_tile_type in Group.ALLOWED_GROUP_TYPES:
+            if first_tile_type in Constants.ALLOWED_GROUP_TYPES:
                 # extension of existing group
-                if second_tile_type in Group.COMPATIBLE_GROUP_TYPES[first_tile_type]:
+                if second_tile_type in Constants.COMPATIBLE_GROUP_TYPES[first_tile_type]:
                     assert_group_at_index(groups=session.groups, index=0,
                                           expected_size=14, expected_coordinates=[first_coord, second_coord], expected_type=first_tile_type)
                 # new group
-                elif second_tile_type in Group.ALLOWED_GROUP_TYPES:
+                elif second_tile_type in Constants.ALLOWED_GROUP_TYPES:
                     assert_group_at_index(groups=session.groups, index=0,
                                           expected_size=7, expected_coordinates=[first_coord], expected_type=first_tile_type)
                     assert_group_at_index(groups=session.groups, index=1,
@@ -839,10 +840,11 @@ def test_group_type_compatibility():
                     assert_group_at_index(groups=session.groups, index=0,
                                           expected_size=7, expected_coordinates=[first_coord], expected_type=first_tile_type)
             # new group
-            elif second_tile_type in Group.ALLOWED_GROUP_TYPES:
+            elif second_tile_type in Constants.ALLOWED_GROUP_TYPES:
                 # ensure that we will pick up STATION as type which will not have created a new group by itself,
                 # but should be considered a part of the new group that we create with an allowed group type
-                if first_tile_type in Group.COMPATIBLE_GROUP_TYPES and second_tile_type in Group.COMPATIBLE_GROUP_TYPES[first_tile_type]:
+                if first_tile_type in Constants.COMPATIBLE_GROUP_TYPES \
+                    and second_tile_type in Constants.COMPATIBLE_GROUP_TYPES[first_tile_type]:
                     assert_group_at_index(groups=session.groups, index=0,
                                           expected_size=14, expected_coordinates=[second_coord, first_coord], expected_type=second_tile_type)
                 else:
@@ -924,8 +926,10 @@ def test_group_connected_subsections():
                                 assert len(connected_subsections) == expected_size
 
                                 # verify that the logic of both methods matches regarding grouping subsections
-                                typed_subsections = [(type, subsections) for type, subsections in Group.get_connected_subsection_groups(tile)\
-                                       if group_connecting_subsection in subsections]
+                                typed_subsections = [
+                                    (type, subsections) for type, subsections in tile.get_connected_subsection_groups()\
+                                        if group_connecting_subsection in subsections
+                                    ]
                                 assert len(typed_subsections) == 1
                                 type, subsections = typed_subsections[0]
                                 assert type == group_type

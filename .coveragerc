@@ -4,6 +4,7 @@ omit =
     */shibokensupport/*
     */signature_bootstrap.py
     */src/constants.py
+    */src/ui/constants.py
 
 [report]
 exclude_lines =

@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Slot, Signal
 
-from src.constants import UIConstants
+from src.ui.constants import UIConstants
 
 
 class FocusLineEdit(QLineEdit):

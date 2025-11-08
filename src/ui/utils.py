@@ -3,7 +3,7 @@ from math import pi, cos, sin
 from PySide6.QtCore import QPointF
 from PySide6.QtGui import QColor
 
-from src.constants import UIConstants
+from src.ui.constants import UIConstants
 
 
 def to_scene_coordinates(tile_coords):
