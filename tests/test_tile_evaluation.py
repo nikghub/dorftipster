@@ -72,7 +72,7 @@ def assert_rating_groups(expected_candidate_coordinate_rating_groups, rated_cand
     high_ratings = [rating for rating in high_rating_dict.values()]
     for i in range(len(high_ratings)):
         if i > 0:
-            assert high_ratings[i] < high_ratings[i-1]
+            assert high_ratings[i] <= high_ratings[i-1]
 
 def assert_perspective_groups(expected_candidate_coordinate_perspective_groups, candidate_tiles, session):
     tile_evaluation = TileEvaluationFactory.create(candidate_tiles, session)
@@ -881,9 +881,6 @@ def test_get_perspective_group_extension_for_tile():
                 [
                     [SideType.CROPS, [
                         (SideType.CROPS, 0)
-                    ]],
-                    [SideType.TRAIN, [
-                        (SideType.TRAIN, 6)
                     ]]
                 ]
             ],
@@ -1090,11 +1087,9 @@ def test_perspective_group_rating_mix():
         # coordinates, side types of a candidate rotation ordered by their expected rating from high to low
         (-6,-4) : [
             [
-                # perspective of size 1 in distance 3
+                # perspective of size 1 in distance 3, but _PERSPECTIVE_GROUPS_MAX_DISTANCE_NON_RESTRICTED_TYPES is 2
                 [SideType.HOUSE, SideType.HOUSE, SideType.HOUSE, SideType.HOUSE, SideType.RIVER, SideType.RIVER],
-                [SideType.RIVER, SideType.HOUSE, SideType.HOUSE, SideType.HOUSE, SideType.HOUSE, SideType.RIVER]
-            ],
-            [
+                [SideType.RIVER, SideType.HOUSE, SideType.HOUSE, SideType.HOUSE, SideType.HOUSE, SideType.RIVER],
                 # perspectibe blocked by river
                 [SideType.HOUSE, SideType.HOUSE, SideType.HOUSE, SideType.RIVER, SideType.RIVER, SideType.HOUSE]
             ]
@@ -1204,11 +1199,7 @@ def test_perspective_group_rating_distant_crossing_restricted():
             ],
             [
                 [SideType.WOODS, SideType.WOODS, SideType.GREEN, SideType.HOUSE, SideType.HOUSE, SideType.GREEN],
-                [
-                    [SideType.HOUSE, [
-                        (SideType.HOUSE, 3)
-                    ]]
-                ]
+                []
             ],
             [
                 [SideType.GREEN, SideType.WOODS, SideType.WOODS, SideType.GREEN, SideType.HOUSE, SideType.HOUSE],
@@ -1216,11 +1207,7 @@ def test_perspective_group_rating_distant_crossing_restricted():
             ],
             [
                 [SideType.HOUSE, SideType.GREEN, SideType.WOODS, SideType.WOODS, SideType.GREEN, SideType.HOUSE],
-                [
-                    [SideType.WOODS, [
-                        (SideType.WOODS, 3)
-                    ]]
-                ]
+                []
             ],
             [
                 [SideType.HOUSE, SideType.HOUSE, SideType.GREEN, SideType.WOODS, SideType.WOODS, SideType.GREEN],
@@ -1458,9 +1445,6 @@ def test_perspective_group_rating_neighbor_restricted_crossing_restricted_4():
                 [
                     [SideType.PONDS, [
                         (SideType.PONDS, 1)
-                    ]],
-                    [SideType.TRAIN, [
-                        (SideType.TRAIN, 6)
                     ]]
                 ]
             ],

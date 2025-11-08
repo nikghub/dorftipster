@@ -124,8 +124,8 @@ class TileEvaluation:
     }
 
     # please note that the distance to reach any side of a direct neighbor is considered 0
-    _PERSPECTIVE_GROUPS_MAX_DISTANCE_RESTRICTED_TYPES = 6
-    _PERSPECTIVE_GROUPS_MAX_DISTANCE_NON_RESTRICTED_TYPES = 3
+    _PERSPECTIVE_GROUPS_MAX_DISTANCE_RESTRICTED_TYPES = 5
+    _PERSPECTIVE_GROUPS_MAX_DISTANCE_NON_RESTRICTED_TYPES = 2
 
     _GROUP_SIZE_RATING_RESTRICTED_BOOST_FACTOR = 2.25
 
@@ -226,21 +226,27 @@ class TileEvaluation:
                         self._PERSPECTIVE_GROUPS_MAX_DISTANCE_NON_RESTRICTED_TYPES
                     )
 
-                # remove open tiles that are adjacent to a hardly restricted subsection type
-                # as we do expect that we can cross these for a possible group extension
+                # possibly remove open tiles to hop onto
                 local_open_tiles = dict(open_coords)
                 for s in TileSubsection.get_side_values():
                     side_type = tile.get_side(s).type
-                    if (
-                        tile.get_neighbor_coords(s) in local_open_tiles
-                        and side_type in self.RESTRICTED_DICT
-                        and (
-                            side_type
-                            not in Constants.COMPATIBLE_GROUP_TYPES[gp.group.type]
-                            or s != subsection
-                        )
-                    ):
-                        del local_open_tiles[tile.get_neighbor_coords(s)]
+                    coords = tile.get_neighbor_coords(s)
+                    if coords not in local_open_tiles:
+                        continue
+                    if side_type not in self.RESTRICTED_DICT:
+                        continue
+
+                    # remove open tiles
+                    # * that are incompatible directions (due to restricted types) for the given group
+                    if side_type not in Constants.COMPATIBLE_GROUP_TYPES[gp.group.type]:
+                        del local_open_tiles[coords]
+
+                    # remove open tiles
+                    # that are also of a restricted, compatible type
+                    # as we expect to be able to connect to these compatible types,
+                    # before we will reach a further away compatible type
+                    elif s != subsection:
+                        del local_open_tiles[coords]
 
                 for distant_group_id, paths in self.get_distant_groups(
                     local_open_tiles,
