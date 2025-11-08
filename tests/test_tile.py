@@ -81,6 +81,16 @@ def test_extract_subsection_sides_invalid_input():
     with pytest.raises(ValueError):
         Tile.extract_subsection_sides([0, "h", "g", 1, 2, 3])
 
+def test_extract_subsection_sides_from_side_objects():
+    side_objects = [Side(SideType.WOODS, False),
+                    Side(SideType.HOUSE, True),
+                    Side(SideType.CROPS, False),
+                    Side(SideType.GREEN, False),
+                    Side(SideType.PONDS, True),
+                    Side(SideType.TRAIN, False)]
+    extracted_sides = Tile.extract_subsection_sides(side_objects)
+    assert list(extracted_sides.values()) == side_objects
+
 def test_is_valid_side_sequence():
     for type in SideType.all_types():
         assert Tile.is_valid_side_sequence(SIDE_TYPE_TO_CHAR[type])
@@ -267,3 +277,36 @@ def test_get_side_type_seq():
         isolated_sequence = example_sequence[:i] + "(" + example_sequence[i] + ")" + example_sequence[i+1:]
         tile = Tile(side_types=isolated_sequence, center_type=SideType.GREEN, coordinates=None)
         assert tile.get_side_type_seq() == isolated_sequence
+
+def test_get_neighbor_coords():
+    tile = Tile(side_types=[SideType.WOODS]*6, center_type=SideType.WOODS, coordinates=(0,0))
+    expected_neighbor_coords = {
+        TileSubsection.TOP: (0,4),
+        TileSubsection.UPPER_RIGHT: (3,2),
+        TileSubsection.LOWER_RIGHT: (3,-2),
+        TileSubsection.BOTTOM: (0,-4),
+        TileSubsection.LOWER_LEFT: (-3,-2),
+        TileSubsection.UPPER_LEFT: (-3,2)
+    }
+
+    for subsection in TileSubsection.get_side_values():
+        actual_coords = tile.get_neighbor_coords(subsection)
+        assert actual_coords == expected_neighbor_coords[subsection]
+
+def test_get_all_neighbor_coords_values():
+    tile = Tile(side_types=[SideType.WOODS]*6, center_type=SideType.WOODS, coordinates=(0,0))
+
+    exptected_neighbor_coords_values = (
+        (0,4),
+        (3,2),
+        (3,-2),
+        (0,-4),
+        (-3,-2),
+        (-3,2),
+        (0,0)
+    )
+
+    expected_neighbor_coords = dict(zip(TileSubsection.get_all_values(), list(exptected_neighbor_coords_values)))
+
+    actual_neighbor_coords = tile.get_neighbor_coords_values()
+    assert actual_neighbor_coords == exptected_neighbor_coords_values

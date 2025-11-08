@@ -122,11 +122,14 @@ class Group:
             return [origin_subsection]
 
         connected_subsection_groups = tile.get_connected_subsection_groups()
+
+        group_connected_subsections = []
         for group_type, connected_subsections in connected_subsection_groups:
             if group_type in compatible_types and origin_subsection in connected_subsections:
-                return connected_subsections
+                group_connected_subsections = connected_subsections
+                break
 
-        return []
+        return group_connected_subsections
 
     @classmethod
     def _extend_group(cls, group, played_tiles, tile, subsections):
