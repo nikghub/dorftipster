@@ -33,7 +33,7 @@ class SideType(IntEnum):
     @classmethod
     @lru_cache(maxsize=20)
     def is_valid(cls, input_value):
-        if input_value is None:
+        if input_value is None or input_value == "":
             return False
         if isinstance(input_value, cls):
             return True
